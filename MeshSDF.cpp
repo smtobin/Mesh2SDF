@@ -3,11 +3,18 @@
 
 #include <map>
 #include <iostream>
+#include <fstream>
 
 MeshSDF::MeshSDF(const VertexMat& verts, const TriangleMat& tris, int grid_size, int padding, bool with_gradient)
     : _N(grid_size), _with_gradient(with_gradient)
 {
     _makeSDF(verts, tris, padding, with_gradient);
+}
+
+MeshSDF::MeshSDF(const std::string& filename)
+    : _N(0), _cell_size(), _bbox_min(), _bbox_max(), _with_gradient(false)
+{
+    _loadSDFFromFile(filename);
 }
 
 float MeshSDF::evaluate(const Eigen::Vector3f& p) const
@@ -51,6 +58,125 @@ Eigen::Vector3f MeshSDF::gradient(const Eigen::Vector3f& p) const
     const Eigen::Vector3f& c010 = _gradient_grid.at(i0,j1,k0);    const Eigen::Vector3f& c110 = _gradient_grid.at(i1,j1,k0);
     const Eigen::Vector3f& c011 = _gradient_grid.at(i0,j1,k1);    const Eigen::Vector3f& c111 = _gradient_grid.at(i1,j1,k1);
     return vectorTriSlerp(c000, c100, c010, c110, c001, c101, c011, c111, id, jd, kd);
+}
+
+void MeshSDF::writeToFile(const std::string& filename) const
+{
+    std::stringstream ss;
+    ss << "Version 1.0\n";  // print version
+    ss << "wg " << _with_gradient << std::endl;  // print whether or not gradients are stored
+    ss << "n " << _N << " " << _N << " " << _N << "\n"; // print grid size
+    ss << "s " << _cell_size[0] << " " << _cell_size[1] << " " << _cell_size[2] << "\n";    // print cell size
+    ss << "b " << _bbox_min[0] << " " << _bbox_min[1] << " " << _bbox_min[2] << " " << _bbox_max[0] << " " << _bbox_max[1] << " " << _bbox_max[2] << std::endl;
+
+    // print distances
+    for (int i = 0; i < _N; i++)    for (int j = 0; j < _N; j++)    for (int k = 0; k < _N; k++)
+    {
+        ss << "d " << i << " " << j << " " << k << " " << _distance_grid.at(i,j,k) << "\n";
+    }
+
+    // print gradients (if applicable)
+    if (_with_gradient)
+    {
+        for (int i = 0; i < _N; i++)    for (int j = 0; j < _N; j++)    for (int k = 0; k < _N; k++)
+        {
+            Eigen::Vector3f grad = _gradient_grid.at(i,j,k);
+            ss << "g " << i << " " << j << " " << k << " " << grad[0] << " " << grad[1] << " " << grad[2] << "\n";
+        }
+    }
+
+    std::ofstream outfile(filename);
+    if (!outfile.is_open())
+    {
+        std::cerr << "Error opening file " << filename << "!" << std::endl;
+        assert(0);
+    }
+
+    outfile << ss.str();
+    outfile.close();
+
+}
+
+void MeshSDF::_loadSDFFromFile(const std::string& filename)
+{
+    // make sure filename has the .sdf extension
+    if (filename.size() < 5 || filename.substr(filename.size() - 4) != std::string(".sdf"))
+    {
+        std::cerr << "MeshSDF::_loadSDFFromFile - " << filename << " is an invalid file path! File should have the .sdf extension!" << std::endl;
+        assert(0);
+    }
+
+    std::ifstream infile(filename);
+    if (!infile.is_open())
+    {
+        std::cerr << "MeshSDF::_loadSDFFromFile - Error opening file " << filename << "!" << std::endl;
+        assert(0);
+    }
+
+    // file open was successful, start reading
+    std::string line;
+
+    while (!infile.eof())
+    {
+        std::getline(infile, line);
+        
+        if (line.substr(0,1) == std::string("d"))
+        {
+            std::stringstream data(line);
+            int i,j,k;
+            float d;
+            char c;
+            data >> c >> i >> j >> k >> d;
+            _distance_grid.at(i,j,k) = d;
+        }
+
+        else if (line.substr(0,1) == std::string("g"))
+        {
+            std::stringstream data(line);
+            int i,j,k;
+            Eigen::Vector3f grad;
+            char c;
+            data >> c >> i >> j >> k >> grad[0] >> grad[1] >> grad[2];
+            _gradient_grid.at(i,j,k) = grad;
+        }
+        else if (line.substr(0,1) == std::string("n"))
+        {
+            std::stringstream data(line);
+            int ni, nj, nk;
+            char c;
+            data >> c >> ni >> nj >> nk;
+            _distance_grid.resize(ni, nj, nk);
+            if (_with_gradient)
+                _gradient_grid.resize(ni, nj, nk);
+        }
+        else if (line.substr(0,1) == std::string("s"))
+        {
+            std::stringstream data(line);
+            float sx, sy, sz;
+            char c;
+            data >> c >> sx >> sy >> sz;
+            _cell_size = Eigen::Vector3f(sx, sy, sz);
+        }
+        else if (line.substr(0,2) == std::string("wg"))
+        {
+            std::stringstream data(line);
+            bool wg;
+            char c;
+            data >> c >> c >> wg;
+            _with_gradient = wg;
+        }
+        else if (line.substr(0,1) == std::string("b"))
+        {
+            std::stringstream data(line);
+            Eigen::Vector3f min, max;
+            char c;
+            data >> c >> min[0] >> min[1] >> min[2] >> max[0] >> max[1] >> max[2];
+            _bbox_min = min;
+            _bbox_max = max;
+        }
+    }
+
+    infile.close();
 }
 
 void MeshSDF::_makeSDF(const VertexMat& verts, const TriangleMat& tris, int padding, bool with_gradient)

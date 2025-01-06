@@ -16,10 +16,21 @@ class MeshSDF
      */
     MeshSDF(const VertexMat& verts, const TriangleMat& tris, int grid_size, int padding=1, bool with_gradient = true);
 
+    /** Loads a SDF that was written to file by this class. Expects a .sdf extension. */
+    MeshSDF(const std::string& filename);
+
+    /** Evaluates the SDF at the given point. */
     float evaluate(const Eigen::Vector3f& p) const;
+    
+    /** Computes the gradient of the SDF at the given point. */
     Eigen::Vector3f gradient(const Eigen::Vector3f& p) const;
 
+    /** Writes the SDF to specified file. */
+    void writeToFile(const std::string& filename) const;
+
     private:
+
+    void _loadSDFFromFile(const std::string& filename);
 
     /** Computes the SDF given vertices and faces. */
     void _makeSDF(const VertexMat& verts, const TriangleMat& tris, int padding, bool with_gradient);

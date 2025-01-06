@@ -14,13 +14,36 @@ int main(int argc, char* argv[])
     }
 
     const std::string filename(argv[1]);
-    const auto [verts, tris] = loadDataFromObj(filename);
+    const std::string ext = filename.substr(filename.size() - 4);
 
-    MeshSDF sdf(verts, tris, 256, 10, true);
-    const Eigen::Vector3f p(1.02,-0.02,1.01);
-    const float dist = sdf.evaluate(p);
-    const Eigen::Vector3f grad = sdf.gradient(p);
+    if (ext == std::string(".obj"))
+    {
+        const auto [verts, tris] = loadDataFromObj(filename);
 
-    std::cout << "Signed distance at (" << p[0] << ", " << p[1] << ", " << p[2] << "): " << dist << std::endl;
-    std::cout << "Gradient at (" << p[0] << ", " << p[1] << ", " << p[2] << "): " << grad[0] << ", " << grad[1] << ", " << grad[2] << std::endl;
+        MeshSDF sdf(verts, tris, 256, 10, true);
+        const Eigen::Vector3f p(1.02,-0.02,1.01);
+        const float dist = sdf.evaluate(p);
+        const Eigen::Vector3f grad = sdf.gradient(p);
+
+        std::cout << "Signed distance at (" << p[0] << ", " << p[1] << ", " << p[2] << "): " << dist << std::endl;
+        std::cout << "Gradient at (" << p[0] << ", " << p[1] << ", " << p[2] << "): " << grad[0] << ", " << grad[1] << ", " << grad[2] << std::endl;
+
+        sdf.writeToFile("cube.sdf");
+    }
+    else if (ext == std::string(".sdf"))
+    {
+        MeshSDF sdf(filename);
+
+        const Eigen::Vector3f p(1.02,-0.02,1.01);
+        const float dist = sdf.evaluate(p);
+        const Eigen::Vector3f grad = sdf.gradient(p);
+
+        std::cout << "Signed distance at (" << p[0] << ", " << p[1] << ", " << p[2] << "): " << dist << std::endl;
+        std::cout << "Gradient at (" << p[0] << ", " << p[1] << ", " << p[2] << "): " << grad[0] << ", " << grad[1] << ", " << grad[2] << std::endl;
+    }
+    
+
+    
+
+    
 }
