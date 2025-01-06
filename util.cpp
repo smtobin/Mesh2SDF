@@ -271,17 +271,17 @@ VerticesAndTriangles loadDataFromObj(const std::string &filename)
     return std::make_pair(verts, tris);
 }
 
-std::string formatFloat(float value, int width)
+std::string formatFloat(float value, int precision)
 {
     std::ostringstream oss;
     if (value == 0.0f) value = 0.0f;    // fix -0.0f
     if (value >= 0)
     {
-        oss << std::scientific << std::setprecision(width) << value;
+        oss << std::scientific << std::setprecision(precision) << value;
     }
     else
     {
-        oss << std::scientific << std::setprecision(width-1) << value;
+        oss << std::scientific << std::setprecision(precision) << value;
     }
     return oss.str();
 }

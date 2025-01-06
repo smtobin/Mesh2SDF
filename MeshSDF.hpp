@@ -30,26 +30,38 @@ class MeshSDF
 
     private:
 
+    /** Helper function that loads an SDF from file. Expects a .sdf file that was produced by this class. */
     void _loadSDFFromFile(const std::string& filename);
 
-    /** Computes the SDF given vertices and faces. */
+    /** Computes the SDF given vertices and faces.
+     * Adapted from Christopher Batty's code.
+     */
     void _makeSDF(const VertexMat& verts, const TriangleMat& tris, int padding, bool with_gradient);
 
+    /** Helper function for SDF computation.
+     * Adapted from Christopher Batty's code.
+     */
     void _checkNeighbor(const VertexMat& verts, const TriangleMat& tris, 
                         Array3i& closest_tri,
                         const Eigen::Vector3f& grid_point,
                         int i0, int j0, int k0, int i1, int j1, int k1);
 
+    /** Helper function for SDF computation.
+     * Adapted from Christopher Batty's code.
+     */
     void _sweep(const VertexMat& verts, const TriangleMat& tris,
                 Array3i& closest_tri,
                 int di, int dj, int dk);
 
+    /** Returns the global coordinates of a point in the SDF grid given (i,j,k) grid indices. */
     Eigen::Vector3f _gridPointFromIJK(int i, int j, int k) const;
 
+    /** Returns DECIMAL (i,j,k) grid indices given a point in global coordinates. */
     Eigen::Vector3f _gridIJKFromPoint(const Eigen::Vector3f& p) const;
 
     private:
-    static constexpr int FLOAT_PRECISION = 10;
+    static constexpr int FLOAT_PRECISION = 10;  // the number of places after the decimal to use when printing the SDF to file
+    
     int _N;  // number of voxels per side in the grid
     Eigen::Vector3f _cell_size;  // size of each voxel in the grid
 

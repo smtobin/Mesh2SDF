@@ -1,6 +1,8 @@
 #ifndef __ARRAY3_HPP
 #define __ARRAY3_HPP
 
+// Used from Christopher Batty's SDFGen implementation: https://github.com/christopherbatty/SDFGen
+
 #include <algorithm>
 #include <cassert>
 #include <vector>
