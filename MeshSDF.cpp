@@ -31,26 +31,37 @@ MeshSDF::MeshSDF(const std::string& filename)
 float MeshSDF::evaluate(const Eigen::Vector3f& p) const
 {
     const Eigen::Vector3f& ijk = _gridIJKFromPoint(p);
-    // trilinear interpolation
+    
     const int i0 = std::floor(ijk[0]);    const int i1 = i0+1;
     const int j0 = std::floor(ijk[1]);    const int j1 = j0+1;
     const int k0 = std::floor(ijk[2]);    const int k1 = k0+1;
-    const double id = ijk[0] - i0;
-    const double jd = ijk[1] - j0;
-    const double kd = ijk[2] - k0;
 
-    const float c000 = _distance_grid.at(i0,j0,k0);    const float c100 = _distance_grid.at(i1,j0,k0);
-    const float c001 = _distance_grid.at(i0,j0,k1);    const float c101 = _distance_grid.at(i1,j0,k1);
-    const float c010 = _distance_grid.at(i0,j1,k0);    const float c110 = _distance_grid.at(i1,j1,k0);
-    const float c011 = _distance_grid.at(i0,j1,k1);    const float c111 = _distance_grid.at(i1,j1,k1);
-    const float c00 = c000*(1-id) + c100*id;
-    const float c01 = c001*(1-id) + c101*id;
-    const float c10 = c010*(1-id) + c110*id;
-    const float c11 = c011*(1-id) + c111*id;
-    const float c0 = c00*(1-jd) + c10*jd;
-    const float c1 = c01*(1-jd) + c11*jd;
-    const float c = c0*(1-kd) + c1*kd;
-    return c;
+    if (i0 >= 0 && i0 < _N && j0 >= 0 && j0 < _N && k0 >= 0 && k0 < _N)
+    {
+        // trilinear interpolation
+        const double id = ijk[0] - i0;
+        const double jd = ijk[1] - j0;
+        const double kd = ijk[2] - k0;
+
+        const float c000 = _distance_grid.at(i0,j0,k0);    const float c100 = _distance_grid.at(i1,j0,k0);
+        const float c001 = _distance_grid.at(i0,j0,k1);    const float c101 = _distance_grid.at(i1,j0,k1);
+        const float c010 = _distance_grid.at(i0,j1,k0);    const float c110 = _distance_grid.at(i1,j1,k0);
+        const float c011 = _distance_grid.at(i0,j1,k1);    const float c111 = _distance_grid.at(i1,j1,k1);
+        const float c00 = c000*(1-id) + c100*id;
+        const float c01 = c001*(1-id) + c101*id;
+        const float c10 = c010*(1-id) + c110*id;
+        const float c11 = c011*(1-id) + c111*id;
+        const float c0 = c00*(1-jd) + c10*jd;
+        const float c1 = c01*(1-jd) + c11*jd;
+        const float c = c0*(1-kd) + c1*kd;
+        return c;
+    }
+    
+    // we are outside the bounds of the grid - for now terminate, though maybe in the future handle this case
+    std::cerr << "Outside the bounds of the SDF!" << std::endl;
+    assert(0);
+
+    
 }
 
 Eigen::Vector3f MeshSDF::gradient(const Eigen::Vector3f& p) const
@@ -60,15 +71,22 @@ Eigen::Vector3f MeshSDF::gradient(const Eigen::Vector3f& p) const
     const int i0 = std::floor(ijk[0]);    const int i1 = i0+1;
     const int j0 = std::floor(ijk[1]);    const int j1 = j0+1;
     const int k0 = std::floor(ijk[2]);    const int k1 = k0+1;
-    const double id = ijk[0] - i0;
-    const double jd = ijk[1] - j0;
-    const double kd = ijk[2] - k0;
+    if (i0 >= 0 && i0 < _N && j0 >= 0 && j0 < _N && k0 >= 0 && k0 < _N)
+    {
+        const double id = ijk[0] - i0;
+        const double jd = ijk[1] - j0;
+        const double kd = ijk[2] - k0;
 
-    const Eigen::Vector3f& c000 = _gradient_grid.at(i0,j0,k0);    const Eigen::Vector3f& c100 = _gradient_grid.at(i1,j0,k0);
-    const Eigen::Vector3f& c001 = _gradient_grid.at(i0,j0,k1);    const Eigen::Vector3f& c101 = _gradient_grid.at(i1,j0,k1);
-    const Eigen::Vector3f& c010 = _gradient_grid.at(i0,j1,k0);    const Eigen::Vector3f& c110 = _gradient_grid.at(i1,j1,k0);
-    const Eigen::Vector3f& c011 = _gradient_grid.at(i0,j1,k1);    const Eigen::Vector3f& c111 = _gradient_grid.at(i1,j1,k1);
-    return vectorTriSlerp(c000, c100, c010, c110, c001, c101, c011, c111, id, jd, kd);
+        const Eigen::Vector3f& c000 = _gradient_grid.at(i0,j0,k0);    const Eigen::Vector3f& c100 = _gradient_grid.at(i1,j0,k0);
+        const Eigen::Vector3f& c001 = _gradient_grid.at(i0,j0,k1);    const Eigen::Vector3f& c101 = _gradient_grid.at(i1,j0,k1);
+        const Eigen::Vector3f& c010 = _gradient_grid.at(i0,j1,k0);    const Eigen::Vector3f& c110 = _gradient_grid.at(i1,j1,k0);
+        const Eigen::Vector3f& c011 = _gradient_grid.at(i0,j1,k1);    const Eigen::Vector3f& c111 = _gradient_grid.at(i1,j1,k1);
+        return vectorTriSlerp(c000, c100, c010, c110, c001, c101, c011, c111, id, jd, kd);
+    }
+
+    // we are outside the bounds of the grid - for now terminate, though maybe in the future handle this case
+    std::cerr << "Outside the bounds of the SDF!" << std::endl;
+    assert(0);
 }
 
 void MeshSDF::writeToFile(const std::string& filename) const
