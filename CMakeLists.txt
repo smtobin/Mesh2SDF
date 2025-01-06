@@ -56,7 +56,12 @@ endif()
 add_executable(${PROJECT_NAME} main.cpp  MeshSDF.cpp util.cpp)
 target_link_libraries(${PROJECT_NAME} Eigen3::Eigen)
 
+add_executable(QuerySDF mainQuery.cpp MeshSDF.cpp util.cpp)
+target_link_libraries(QuerySDF Eigen3::Eigen)
+
 if (assimp_FOUND)
   target_compile_definitions(${PROJECT_NAME} PRIVATE HAVE_ASSIMP)
+  target_compile_definitions(QuerySDF PRIVATE HAVE_ASSIMP)
   target_link_libraries(${PROJECT_NAME} assimp)
+  target_link_libraries(QuerySDF assimp)
 endif()

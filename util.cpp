@@ -211,7 +211,7 @@ std::string formatFloat(float value, int precision)
     }
     else
     {
-        oss << std::scientific << std::setprecision(precision) << value;
+        oss << std::scientific << std::setprecision(precision-1) << value;
     }
     return oss.str();
 }
