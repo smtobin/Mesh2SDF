@@ -3,7 +3,18 @@
 
 #include <map>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
+
+// for fast file parsing
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <errno.h>
 
 MeshSDF::MeshSDF(const VertexMat& verts, const TriangleMat& tris, int grid_size, int padding, bool with_gradient)
     : _N(grid_size), _with_gradient(with_gradient)
@@ -63,16 +74,15 @@ Eigen::Vector3f MeshSDF::gradient(const Eigen::Vector3f& p) const
 void MeshSDF::writeToFile(const std::string& filename) const
 {
     std::stringstream ss;
-    ss << "Version 1.0\n";  // print version
-    ss << "wg " << _with_gradient << std::endl;  // print whether or not gradients are stored
-    ss << "n " << _N << " " << _N << " " << _N << "\n"; // print grid size
-    ss << "s " << _cell_size[0] << " " << _cell_size[1] << " " << _cell_size[2] << "\n";    // print cell size
-    ss << "b " << _bbox_min[0] << " " << _bbox_min[1] << " " << _bbox_min[2] << " " << _bbox_max[0] << " " << _bbox_max[1] << " " << _bbox_max[2] << std::endl;
+    ss << _N << " " << _N << " " << _N << "\n"; // print grid size
+    ss << formatFloat(_cell_size[0],FLOAT_PRECISION) << " " << formatFloat(_cell_size[1],FLOAT_PRECISION) << " " << formatFloat(_cell_size[2],FLOAT_PRECISION) << "\n";    // print cell size
+    ss << formatFloat(_bbox_min[0],FLOAT_PRECISION) << " " << formatFloat(_bbox_min[1],FLOAT_PRECISION) << " " << formatFloat(_bbox_min[2],FLOAT_PRECISION) << "\n";
+    ss << " " << formatFloat(_bbox_max[0],FLOAT_PRECISION) << " " << formatFloat(_bbox_max[1],FLOAT_PRECISION) << " " << formatFloat(_bbox_max[2],FLOAT_PRECISION) << "\n";
 
     // print distances
     for (int i = 0; i < _N; i++)    for (int j = 0; j < _N; j++)    for (int k = 0; k < _N; k++)
     {
-        ss << "d " << i << " " << j << " " << k << " " << _distance_grid.at(i,j,k) << "\n";
+        ss << formatFloat(_distance_grid.at(i,j,k),FLOAT_PRECISION) << "\n";
     }
 
     // print gradients (if applicable)
@@ -81,7 +91,7 @@ void MeshSDF::writeToFile(const std::string& filename) const
         for (int i = 0; i < _N; i++)    for (int j = 0; j < _N; j++)    for (int k = 0; k < _N; k++)
         {
             Eigen::Vector3f grad = _gradient_grid.at(i,j,k);
-            ss << "g " << i << " " << j << " " << k << " " << grad[0] << " " << grad[1] << " " << grad[2] << "\n";
+            ss << formatFloat(grad[0],FLOAT_PRECISION) << " " << formatFloat(grad[1],FLOAT_PRECISION) << " " << formatFloat(grad[2],FLOAT_PRECISION) << "\n";
         }
     }
 
@@ -99,84 +109,108 @@ void MeshSDF::writeToFile(const std::string& filename) const
 
 void MeshSDF::_loadSDFFromFile(const std::string& filename)
 {
-    // make sure filename has the .sdf extension
-    if (filename.size() < 5 || filename.substr(filename.size() - 4) != std::string(".sdf"))
-    {
-        std::cerr << "MeshSDF::_loadSDFFromFile - " << filename << " is an invalid file path! File should have the .sdf extension!" << std::endl;
-        assert(0);
-    }
+    const int FLOAT_CHAR_WIDTH = FLOAT_PRECISION + 6;   // the number of characters a float takes up in the file
 
-    std::ifstream infile(filename);
-    if (!infile.is_open())
-    {
-        std::cerr << "MeshSDF::_loadSDFFromFile - Error opening file " << filename << "!" << std::endl;
-        assert(0);
-    }
+    // fast read from file using mmap - https://stackoverflow.com/a/17925197
+    struct stat sb;
+    long cntr = 0;
+    int fd, line_length;
+    int line_num = 0;
+    char* data;
+    char* line;
 
-    // file open was successful, start reading
-    std::string line;
+    int grid_index_1D = 0;
+    float f;
+    bool reading_distances = true;
+    bool reading_gradients = false;
+    // map the file
+    fd = open(filename.c_str(), O_RDONLY);
+    fstat(fd, &sb);
 
-    while (!infile.eof())
+    data = (char*)mmap((caddr_t)0, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    line = data;
+
+    // read the first few lines
+
+    _N = atoi(line);    // read the number of grid cells (grid has the same number of cells in each direction)
+    _distance_grid.resize(_N, _N, _N);  // resize the distance grid accordingly
+    while (*data++ != '\n' && cntr++ < sb.st_size);     // move to next line
+    
+    parseVector3f(_cell_size, data, FLOAT_CHAR_WIDTH);  // read cell size
+    while (*data++ != '\n' && cntr++ < sb.st_size);     // move to next line
+
+    
+    parseVector3f(_bbox_min, data, FLOAT_CHAR_WIDTH);   // read minimum bounding box point
+    while (*data++ != '\n' && cntr++ < sb.st_size);     // move to next line
+    parseVector3f(_bbox_max, data, FLOAT_CHAR_WIDTH);   // read maximum bounding box point
+    while (*data++ != '\n' && cntr++ < sb.st_size);     // move to next line
+
+    // read distances and gradients (when applicable)
+    while (cntr < sb.st_size)
     {
-        std::getline(infile, line);
+        line = data;
+
+        // move to the next line
+        while (cntr++ < sb.st_size && *data++ != '\n');
         
-        if (line.substr(0,1) == std::string("d"))
+
+        /** Process the line */
+
+        // find 3D grid index (i.e. i,j,k)
+        const int i = grid_index_1D / (_N*_N);
+        const int j = (grid_index_1D / _N) % _N;
+        const int k = grid_index_1D % _N;
+
+        // if we are reading distances, we only expect a single float per line
+        if (reading_distances)
         {
-            std::stringstream data(line);
-            int i,j,k;
-            float d;
-            char c;
-            data >> c >> i >> j >> k >> d;
-            _distance_grid.at(i,j,k) = d;
+            // read float from buffer    
+            _distance_grid(i,j,k) = atof(line);
         }
 
-        else if (line.substr(0,1) == std::string("g"))
+        // if we are reading gradients, we expect 3 floats per line separated by spaces
+        if (reading_gradients)
         {
-            std::stringstream data(line);
-            int i,j,k;
-            Eigen::Vector3f grad;
-            char c;
-            data >> c >> i >> j >> k >> grad[0] >> grad[1] >> grad[2];
-            _gradient_grid.at(i,j,k) = grad;
+            // read float 3-vector from char buffer
+            parseVector3f(_gradient_grid(i,j,k), line, FLOAT_CHAR_WIDTH);
         }
-        else if (line.substr(0,1) == std::string("n"))
+
+        grid_index_1D++;
+
+        // when we reach the end of distances, switch over to reading gradients
+        if (grid_index_1D >= _N*_N*_N)
         {
-            std::stringstream data(line);
-            int ni, nj, nk;
-            char c;
-            data >> c >> ni >> nj >> nk;
-            _distance_grid.resize(ni, nj, nk);
-            if (_with_gradient)
-                _gradient_grid.resize(ni, nj, nk);
-        }
-        else if (line.substr(0,1) == std::string("s"))
-        {
-            std::stringstream data(line);
-            float sx, sy, sz;
-            char c;
-            data >> c >> sx >> sy >> sz;
-            _cell_size = Eigen::Vector3f(sx, sy, sz);
-        }
-        else if (line.substr(0,2) == std::string("wg"))
-        {
-            std::stringstream data(line);
-            bool wg;
-            char c;
-            data >> c >> c >> wg;
-            _with_gradient = wg;
-        }
-        else if (line.substr(0,1) == std::string("b"))
-        {
-            std::stringstream data(line);
-            Eigen::Vector3f min, max;
-            char c;
-            data >> c >> min[0] >> min[1] >> min[2] >> max[0] >> max[1] >> max[2];
-            _bbox_min = min;
-            _bbox_max = max;
+            if (reading_distances)
+            {
+                reading_distances = false;
+
+                // check if there are gradients after the distances
+                if (sb.st_size - cntr > _N*_N*_N*(FLOAT_CHAR_WIDTH + 3))
+                {
+                    // if so, resize the gradient grid appropriately
+                    _gradient_grid.resize(_N, _N, _N);
+                    _with_gradient = true;
+
+                    // and indicate that we are expecting to read gradients now
+                    reading_gradients = true;
+                }
+                
+            }
+            else if (reading_gradients)
+            {
+                reading_gradients = false;
+            }
+
+            grid_index_1D = 0;
+            continue;
         }
     }
-
-    infile.close();
+    
+    std::cout << "Finished reading SDF from file..." << std::endl;
+    std::cout << "\tGrid size: " << _N << " x " << _N << " x " << _N << std::endl;
+    std::cout << "\tCell size: " << _cell_size[0] << ", " << _cell_size[1] << ", " << _cell_size[2] << std::endl;
+    std::cout << "\tBounding box: (" << _bbox_min[0] << ", " << _bbox_min[1] << ", " << _bbox_min[2] << ") to (" << _bbox_max[0] << ", " << _bbox_max[1] << ", " << _bbox_max[2] << ")" << std::endl;
+    std::cout << "\tWith gradients: " << (_with_gradient ? "True" : "False") << std::endl;
 }
 
 void MeshSDF::_makeSDF(const VertexMat& verts, const TriangleMat& tris, int padding, bool with_gradient)

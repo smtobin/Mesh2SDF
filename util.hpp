@@ -24,4 +24,7 @@ Eigen::Vector3f vectorTriSlerp( const Eigen::Vector3f& v000, const Eigen::Vector
 
 VerticesAndTriangles loadDataFromObj(const std::string& filename);
 
+std::string formatFloat(float value, int width);
+void parseVector3f(Eigen::Vector3f& vec, const char* str, int width);
+
 #endif

@@ -4,6 +4,7 @@
 #include <vector>
 #include <cmath>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 
 /** Returns the minimum distance from a point to a line segment
@@ -268,4 +269,26 @@ VerticesAndTriangles loadDataFromObj(const std::string &filename)
     std::cout << "Loaded " << verts.cols() << " vertices and " << tris.cols() << " triangles from " << filename << "." << std::endl;
 
     return std::make_pair(verts, tris);
+}
+
+std::string formatFloat(float value, int width)
+{
+    std::ostringstream oss;
+    if (value == 0.0f) value = 0.0f;    // fix -0.0f
+    if (value >= 0)
+    {
+        oss << std::scientific << std::setprecision(width) << value;
+    }
+    else
+    {
+        oss << std::scientific << std::setprecision(width-1) << value;
+    }
+    return oss.str();
+}
+
+void parseVector3f(Eigen::Vector3f& vec, const char* str, int width)
+{
+    vec[0] = atof(str);
+    vec[1] = atof(str+width+1);
+    vec[2] = atof(str+2*width+2);
 }

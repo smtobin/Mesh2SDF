@@ -49,6 +49,7 @@ class MeshSDF
     Eigen::Vector3f _gridIJKFromPoint(const Eigen::Vector3f& p) const;
 
     private:
+    static constexpr int FLOAT_PRECISION = 10;
     int _N;  // number of voxels per side in the grid
     Eigen::Vector3f _cell_size;  // size of each voxel in the grid
 
