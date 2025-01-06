@@ -91,6 +91,8 @@ Eigen::Vector3f MeshSDF::gradient(const Eigen::Vector3f& p) const
 
 void MeshSDF::writeToFile(const std::string& filename) const
 {
+    std::cout << "Writing SDF to " << filename << "..." << std::endl;
+
     std::stringstream ss;
     ss << _N << " " << _N << " " << _N << "\n"; // print grid size
     ss << formatFloat(_cell_size[0],FLOAT_PRECISION) << " " << formatFloat(_cell_size[1],FLOAT_PRECISION) << " " << formatFloat(_cell_size[2],FLOAT_PRECISION) << "\n";    // print cell size
@@ -122,6 +124,8 @@ void MeshSDF::writeToFile(const std::string& filename) const
 
     outfile << ss.str();
     outfile.close();
+
+    std::cout << "Done!" << std::endl;
 
 }
 
@@ -400,6 +404,12 @@ void MeshSDF::_makeSDF(const VertexMat& verts, const TriangleMat& tris, int padd
             
         }
     }
+
+    std::cout << "Finished creating SDF from mesh..." << std::endl;
+    std::cout << "\tGrid size: " << _N << " x " << _N << " x " << _N << std::endl;
+    std::cout << "\tCell size: " << _cell_size[0] << ", " << _cell_size[1] << ", " << _cell_size[2] << std::endl;
+    std::cout << "\tBounding box: (" << _bbox_min[0] << ", " << _bbox_min[1] << ", " << _bbox_min[2] << ") to (" << _bbox_max[0] << ", " << _bbox_max[1] << ", " << _bbox_max[2] << ")" << std::endl;
+    std::cout << "\tWith gradients: " << (_with_gradient ? "True" : "False") << std::endl;
     
 }
 

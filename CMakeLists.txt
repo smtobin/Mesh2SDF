@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 2.6)
-Project("SDFGen")
+cmake_minimum_required(VERSION 3.12)
+Project("Mesh2SDF")
 
 # Set the build type.  Options are:
 #  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
@@ -43,7 +43,20 @@ FetchContent_MakeAvailable(Eigen)
 list(POP_BACK CMAKE_MESSAGE_INDENT)
 message(CHECK_PASS "fetched")
 
+# load assimp
+message("\n-- Locating assimp...")
+find_package(assimp QUIET)
+if(assimp_FOUND)
+  message("--  assimp located!\n")
+else()
+  message("--  assimp NOT located!\n")
+endif()
 
 
 add_executable(${PROJECT_NAME} main.cpp  MeshSDF.cpp util.cpp)
 target_link_libraries(${PROJECT_NAME} Eigen3::Eigen)
+
+if (assimp_FOUND)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE HAVE_ASSIMP)
+  target_link_libraries(${PROJECT_NAME} assimp)
+endif()

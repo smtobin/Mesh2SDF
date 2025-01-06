@@ -200,7 +200,83 @@ Eigen::Vector3f vectorTriSlerp( const Eigen::Vector3f& v000, const Eigen::Vector
                         t2  );
 }
 
-VerticesAndTriangles loadDataFromObj(const std::string &filename)
+
+std::string formatFloat(float value, int precision)
+{
+    std::ostringstream oss;
+    if (value == 0.0f) value = 0.0f;    // fix -0.0f
+    if (value >= 0)
+    {
+        oss << std::scientific << std::setprecision(precision) << value;
+    }
+    else
+    {
+        oss << std::scientific << std::setprecision(precision) << value;
+    }
+    return oss.str();
+}
+
+void parseVector3f(Eigen::Vector3f& vec, const char* str, int width)
+{
+    vec[0] = atof(str);
+    vec[1] = atof(str+width+1);
+    vec[2] = atof(str+2*width+2);
+}
+
+#ifdef HAVE_ASSIMP
+
+#include <assimp/Importer.hpp>      // C++ importer interface
+#include <assimp/scene.h>           // Output data structure
+#include <assimp/postprocess.h>     // Post processing flags
+
+VerticesAndTriangles loadMeshDataFromFile(const std::string& filename)
+{
+    Assimp::Importer importer;
+
+    // And have it read the given file with some example postprocessing
+    // Usually - if speed is not the most important aspect for you - you'll
+    // probably to request more postprocessing than we do in this example.
+    const aiScene* scene = importer.ReadFile( filename,
+        aiProcess_Triangulate            |
+        aiProcess_JoinIdenticalVertices  |
+        aiProcess_SortByPType);
+
+    // If the import failed, report it
+    if (scene == nullptr)
+    {
+        std::cerr << "\tAssimp::Importer could not open " << filename << std::endl;
+        std::cerr << "\tEnsure that the file is in a format that assimp can handle." << std::endl;
+        assert(0);
+    }
+
+    const aiMesh* ai_mesh = scene->mMeshes[0];
+
+    // Extract vertices
+    VertexMat verts(3, ai_mesh->mNumVertices);
+    for (unsigned i = 0; i < ai_mesh->mNumVertices; i++)
+    {
+        verts(0,i) = ai_mesh->mVertices[i].x;
+        verts(1,i) = ai_mesh->mVertices[i].y;
+        verts(2,i) = ai_mesh->mVertices[i].z;
+    }
+
+    // Extract faces
+    TriangleMat tris(3, ai_mesh->mNumFaces);
+    for (unsigned i = 0; i < ai_mesh->mNumFaces; i++)
+    {
+        tris(0,i) = ai_mesh->mFaces[i].mIndices[0];
+        tris(1,i) = ai_mesh->mFaces[i].mIndices[1];
+        tris(2,i) = ai_mesh->mFaces[i].mIndices[2];
+    }
+
+    std::cout << "Loaded " << verts.cols() << " vertices and " << tris.cols() << " triangles from " << filename << "." << std::endl;
+
+    return std::make_pair(verts, tris);
+}
+
+#else
+
+VerticesAndTriangles loadMeshDataFromFile(const std::string &filename)
 {
     // make sure .obj file was passed in
     if (filename.size() < 5 || filename.substr(filename.size() - 4) != std::string(".obj"))
@@ -271,24 +347,4 @@ VerticesAndTriangles loadDataFromObj(const std::string &filename)
     return std::make_pair(verts, tris);
 }
 
-std::string formatFloat(float value, int precision)
-{
-    std::ostringstream oss;
-    if (value == 0.0f) value = 0.0f;    // fix -0.0f
-    if (value >= 0)
-    {
-        oss << std::scientific << std::setprecision(precision) << value;
-    }
-    else
-    {
-        oss << std::scientific << std::setprecision(precision) << value;
-    }
-    return oss.str();
-}
-
-void parseVector3f(Eigen::Vector3f& vec, const char* str, int width)
-{
-    vec[0] = atof(str);
-    vec[1] = atof(str+width+1);
-    vec[2] = atof(str+2*width+2);
-}
+#endif

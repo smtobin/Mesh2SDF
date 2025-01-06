@@ -70,11 +70,6 @@ Eigen::Vector3f vectorTriSlerp( const Eigen::Vector3f& v000, const Eigen::Vector
 
 // =========== FILE UTILS ==============
 
-/** A simple parser to load vertices and triangles from a .obj file.
- * Very simple - cannot handle vertex normals or materials or anything fancy - just vertices and triangles.
- */
-VerticesAndTriangles loadDataFromObj(const std::string& filename);
-
 /** Formats a float to be a constant width string. Puts the float in scientific notation using std::scientific.
  * This is useful for printing the SDF to file - when reading it back we can know exactly how many digits each float has.
  * @param value - the float value to format as a string
@@ -89,5 +84,18 @@ std::string formatFloat(float value, int precision);
  * @param width - the number of chars each float has
  */
 void parseVector3f(Eigen::Vector3f& vec, const char* str, int width);
+
+#ifdef HAVE_ASSIMP
+
+VerticesAndTriangles loadMeshDataFromFile(const std::string& filename);
+
+#else
+
+/** A simple parser to load vertices and triangles from a .obj file.
+ * Very simple - cannot handle vertex normals or materials or anything fancy - just vertices and triangles.
+ */
+VerticesAndTriangles loadMeshDataFromFile(const std::string& filename);
+
+#endif
 
 #endif

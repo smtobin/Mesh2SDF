@@ -4,6 +4,7 @@
 
 
 #include <iostream>
+#include <memory>
 
 int main(int argc, char* argv[])
 {
@@ -16,31 +17,28 @@ int main(int argc, char* argv[])
     const std::string filename(argv[1]);
     const std::string ext = filename.substr(filename.size() - 4);
 
-    if (ext == std::string(".obj"))
+    std::unique_ptr<MeshSDF> sdf;
+
+    if (ext == std::string(".obj") || ext == std::string(".stl"))
     {
-        const auto [verts, tris] = loadDataFromObj(filename);
+        const auto [verts, tris] = loadMeshDataFromFile(filename);  // load vertices and triangles from mesh file
 
-        MeshSDF sdf(verts, tris, 256, 10, true);
-        const Eigen::Vector3f p(0.2,0.2,0.2);
-        const float dist = sdf.evaluate(p);
-        const Eigen::Vector3f grad = sdf.gradient(p);
-
-        std::cout << "Signed distance at (" << p[0] << ", " << p[1] << ", " << p[2] << "): " << dist << std::endl;
-        std::cout << "Gradient at (" << p[0] << ", " << p[1] << ", " << p[2] << "): " << grad[0] << ", " << grad[1] << ", " << grad[2] << std::endl;
-
-        sdf.writeToFile("cube.sdf");
+        sdf = std::make_unique<MeshSDF>(verts, tris, 128, 6, true); // create SDF from mesh data
+        
+        sdf->writeToFile("output.sdf"); // write SDF to file
     }
-    else if (ext == std::string(".sdf"))
+    else if (ext == std::string(".sdf"))    // if user gives .sdf file, load the SDF from it
     {
-        MeshSDF sdf(filename);
-
-        const Eigen::Vector3f p(0.2,0.06,0.2);
-        const float dist = sdf.evaluate(p);
-        const Eigen::Vector3f grad = sdf.gradient(p);
-
-        std::cout << "Signed distance at (" << p[0] << ", " << p[1] << ", " << p[2] << "): " << dist << std::endl;
-        std::cout << "Gradient at (" << p[0] << ", " << p[1] << ", " << p[2] << "): " << grad[0] << ", " << grad[1] << ", " << grad[2] << std::endl;
+        sdf = std::make_unique<MeshSDF>(filename);
     }
+
+    // test the SDF by querying a point
+    const Eigen::Vector3f p(0.6, 0.2, 0.9);
+    const float dist = sdf->evaluate(p);
+    const Eigen::Vector3f grad = sdf->gradient(p);
+
+    std::cout << "Signed distance at (" << p[0] << ", " << p[1] << ", " << p[2] << "): " << dist << std::endl;
+    std::cout << "Gradient at (" << p[0] << ", " << p[1] << ", " << p[2] << "): " << grad[0] << ", " << grad[1] << ", " << grad[2] << std::endl;
     
 
     
