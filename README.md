@@ -10,7 +10,17 @@ The core algorithm is the same as [Christopher Batty's SDFGen](https://github.co
 
 
 ## Building
-`assimp` is an optional requirement that is used to load mesh files. On Ubuntu, it can be installed simply with
+[`Eigen`](https://eigen.tuxfamily.org/index.php?title=Main_Page) is used under the hood for representing vectors and matrices. This can be installed for CMake easily on Linux with:
+```
+git clone https://gitlab.com/libeigen/eigen.git
+cd eigen
+mkdir build
+cmake ..
+make
+sudo make install
+```
+
+[`assimp`](https://github.com/assimp/assimp) is an optional requirement that is used to load mesh files. On Ubuntu, it can be installed simply with
 ```
 sudo apt-get install libassimp-dev
 ```
