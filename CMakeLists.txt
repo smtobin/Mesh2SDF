@@ -19,29 +19,8 @@ set(CMAKE_CXX_FLAGS "-O3")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native")
 
-message(CHECK_START "Fetching Eigen3")
-list(APPEND CMAKE_MESSAGE_INDENT "  ")
-
-include(FetchContent)
-FetchContent_Declare(
-  Eigen
-  GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-  GIT_TAG master
-  GIT_SHALLOW TRUE
-  GIT_PROGRESS TRUE)
-# note: To disable eigen tests,
-# you should put this code in a add_subdirectory to avoid to change
-# BUILD_TESTING for your own project too since variables are directory
-# scoped
-set(BUILD_TESTING OFF)
-set(EIGEN_BUILD_TESTING OFF)
-set(EIGEN_MPL2_ONLY ON)
-set(EIGEN_BUILD_PKGCONFIG OFF)
-set(EIGEN_BUILD_DOC OFF)
-FetchContent_MakeAvailable(Eigen)
-
-list(POP_BACK CMAKE_MESSAGE_INDENT)
-message(CHECK_PASS "fetched")
+# load Eigen
+find_package(Eigen3 3.3 REQUIRED)
 
 # load assimp
 message("\n-- Locating assimp...")
@@ -52,12 +31,18 @@ else()
   message("--  assimp NOT located!\n")
 endif()
 
+add_library(mesh2sdf MeshSDF.cpp util.cpp)
+target_link_libraries(mesh2sdf Eigen3::Eigen)
 
-add_executable(${PROJECT_NAME} main.cpp  MeshSDF.cpp util.cpp)
-target_link_libraries(${PROJECT_NAME} Eigen3::Eigen)
+add_executable(${PROJECT_NAME} main.cpp)
+target_link_libraries(${PROJECT_NAME} mesh2sdf)
 
-add_executable(QuerySDF mainQuery.cpp MeshSDF.cpp util.cpp)
-target_link_libraries(QuerySDF Eigen3::Eigen)
+add_executable(QuerySDF mainQuery.cpp)
+target_link_libraries(QuerySDF mesh2sdf)
+
+install(TARGETS mesh2sdf EXPORT mesh2sdf-targets
+  RUNTIME DESTINATION bin/${PROJECT_NAME}
+  ARCHIVE DESTINATION lib/${PROJECT_NAME})
 
 if (assimp_FOUND)
   target_compile_definitions(${PROJECT_NAME} PRIVATE HAVE_ASSIMP)
