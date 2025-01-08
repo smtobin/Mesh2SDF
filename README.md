@@ -33,6 +33,11 @@ cd build
 cmake ..
 make
 ```
+By default, the library is built to perform computations using floating point arithmetic. To use double precision, pass the command line argument `-DUSE_DOUBLE_PRECISION=True` with the CMake command, i.e.
+```
+cmake .. -DUSE_DOUBLE_PRECISION=True
+```
+
 ## Executables
 Building will produce two binaries that let you generate and query grid-based SDFs of triangle meshes.
 The first binary, `Mesh2SDF`, generates a SDF from a mesh file of your choice. For example:
