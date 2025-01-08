@@ -4,6 +4,9 @@
 #include "types.hpp"
 #include "array3.hpp"
 
+namespace mesh2sdf
+{
+
 class MeshSDF
 {
     public:
@@ -61,7 +64,7 @@ class MeshSDF
 
     private:
     static constexpr int FLOAT_PRECISION = 10;  // the number of places after the decimal to use when printing the SDF to file
-    
+
     int _N;  // number of voxels per side in the grid
     Eigen::Vector3f _cell_size;  // size of each voxel in the grid
 
@@ -73,5 +76,7 @@ class MeshSDF
     Array3<float> _distance_grid;  // stores the distances in a grid
     Array3<Eigen::Vector3f> _gradient_grid;  // stores the gradients in a grid - this will be empty if with_gradient=false
 };
+
+} // namespace mesh2sdf
 
 #endif // __MESH_SDF_HPP

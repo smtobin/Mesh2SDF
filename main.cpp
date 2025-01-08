@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
     {
         const auto [verts, tris] = loadMeshDataFromFile(filename);  // load vertices and triangles from mesh file
 
-        MeshSDF sdf(verts, tris, num_cells, padding, with_gradients); // create SDF from mesh data
+        mesh2sdf::MeshSDF sdf(verts, tris, num_cells, padding, with_gradients); // create SDF from mesh data
         
         sdf.writeToFile("output.sdf"); // write SDF to file
     }

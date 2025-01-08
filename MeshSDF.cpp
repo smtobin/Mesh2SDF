@@ -16,6 +16,9 @@
 #include <sys/stat.h>
 #include <errno.h>
 
+namespace mesh2sdf
+{
+
 MeshSDF::MeshSDF(const VertexMat& verts, const TriangleMat& tris, int grid_size, int padding, bool with_gradient)
     : _N(grid_size), _with_gradient(with_gradient)
 {
@@ -475,3 +478,5 @@ Eigen::Vector3f MeshSDF::_gridIJKFromPoint(const Eigen::Vector3f& p) const
 {
     return (p - _bbox_min).array() / _cell_size.array();
 }
+
+} // mesh2sdf
