@@ -13,10 +13,17 @@
 namespace mesh2sdf
 {
 
-typedef Array3<float> Array3f;
+#ifdef DOUBLE_PRECISION
+typedef double Real;
+#else
+typedef float Real;
+#endif
+
+typedef Array3<Real> Array3r;
 typedef Array3<int> Array3i;
-typedef Array3<Eigen::Vector3f> Array3Vec3f;
-typedef Eigen::Matrix<float, 3, -1> VertexMat;
+typedef Eigen::Vector<Real, 3> Vec3r;
+typedef Array3<Vec3r> Array3Vec3r;
+typedef Eigen::Matrix<Real, 3, -1> VertexMat;
 typedef Eigen::Matrix<int, 3, -1> TriangleMat;
 
 typedef std::pair<VertexMat,TriangleMat> VerticesAndTriangles;

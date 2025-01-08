@@ -17,12 +17,12 @@ int main(int argc, char* argv[])
     MeshSDF sdf2("output.sdf");
 
     // test the SDFs by querying a point inside the cube
-    const Eigen::Vector3f p(0.6, 0.2, 0.9);
-    const float dist1 = sdf1.evaluate(p);
-    const Eigen::Vector3f grad1 = sdf1.gradient(p);
+    const Vec3r p(0.6, 0.2, 0.9);
+    const Real dist1 = sdf1.evaluate(p);
+    const Vec3r grad1 = sdf1.gradient(p);
 
-    const float dist2 = sdf2.evaluate(p);
-    const Eigen::Vector3f grad2 = sdf2.gradient(p);
+    const Real dist2 = sdf2.evaluate(p);
+    const Vec3r grad2 = sdf2.gradient(p);
 
     // they should be the same
     std::cout << "Signed distance at (" << p[0] << ", " << p[1] << ", " << p[2] << "):\n  Original SDF: " << dist1 << "\n  Reloaded SDF: " << dist2 << std::endl;

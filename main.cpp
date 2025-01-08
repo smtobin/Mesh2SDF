@@ -41,14 +41,6 @@ int main(int argc, char* argv[])
         std::cerr << "Input file must be .obj or .stl!" << std::endl;
         exit(-1);
     }
-
-    // test the SDF by querying a point
-    // const Eigen::Vector3f p(0.6, 0.2, 0.9);
-    // const float dist = sdf->evaluate(p);
-    // const Eigen::Vector3f grad = sdf->gradient(p);
-
-    // std::cout << "Signed distance at (" << p[0] << ", " << p[1] << ", " << p[2] << "): " << dist << std::endl;
-    // std::cout << "Gradient at (" << p[0] << ", " << p[1] << ", " << p[2] << "): " << grad[0] << ", " << grad[1] << ", " << grad[2] << std::endl;
     
 
     

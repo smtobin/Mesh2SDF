@@ -35,9 +35,9 @@ MeshSDF::MeshSDF(const std::string& filename)
     _loadSDFFromFile(filename);
 }
 
-float MeshSDF::evaluate(const Eigen::Vector3f& p) const
+Real MeshSDF::evaluate(const Vec3r& p) const
 {
-    const Eigen::Vector3f& ijk = _gridIJKFromPoint(p);
+    const Vec3r& ijk = _gridIJKFromPoint(p);
     
     const int i0 = std::floor(ijk[0]);    const int i1 = i0+1;
     const int j0 = std::floor(ijk[1]);    const int j1 = j0+1;
@@ -46,21 +46,21 @@ float MeshSDF::evaluate(const Eigen::Vector3f& p) const
     if (i0 >= 0 && i0 < _N && j0 >= 0 && j0 < _N && k0 >= 0 && k0 < _N)
     {
         // trilinear interpolation
-        const double id = ijk[0] - i0;
-        const double jd = ijk[1] - j0;
-        const double kd = ijk[2] - k0;
+        const Real id = ijk[0] - i0;
+        const Real jd = ijk[1] - j0;
+        const Real kd = ijk[2] - k0;
 
-        const float c000 = _distance_grid.at(i0,j0,k0);    const float c100 = _distance_grid.at(i1,j0,k0);
-        const float c001 = _distance_grid.at(i0,j0,k1);    const float c101 = _distance_grid.at(i1,j0,k1);
-        const float c010 = _distance_grid.at(i0,j1,k0);    const float c110 = _distance_grid.at(i1,j1,k0);
-        const float c011 = _distance_grid.at(i0,j1,k1);    const float c111 = _distance_grid.at(i1,j1,k1);
-        const float c00 = c000*(1-id) + c100*id;
-        const float c01 = c001*(1-id) + c101*id;
-        const float c10 = c010*(1-id) + c110*id;
-        const float c11 = c011*(1-id) + c111*id;
-        const float c0 = c00*(1-jd) + c10*jd;
-        const float c1 = c01*(1-jd) + c11*jd;
-        const float c = c0*(1-kd) + c1*kd;
+        const Real c000 = _distance_grid.at(i0,j0,k0);    const Real c100 = _distance_grid.at(i1,j0,k0);
+        const Real c001 = _distance_grid.at(i0,j0,k1);    const Real c101 = _distance_grid.at(i1,j0,k1);
+        const Real c010 = _distance_grid.at(i0,j1,k0);    const Real c110 = _distance_grid.at(i1,j1,k0);
+        const Real c011 = _distance_grid.at(i0,j1,k1);    const Real c111 = _distance_grid.at(i1,j1,k1);
+        const Real c00 = c000*(1-id) + c100*id;
+        const Real c01 = c001*(1-id) + c101*id;
+        const Real c10 = c010*(1-id) + c110*id;
+        const Real c11 = c011*(1-id) + c111*id;
+        const Real c0 = c00*(1-jd) + c10*jd;
+        const Real c1 = c01*(1-jd) + c11*jd;
+        const Real c = c0*(1-kd) + c1*kd;
         return c;
     }
     
@@ -71,23 +71,23 @@ float MeshSDF::evaluate(const Eigen::Vector3f& p) const
     
 }
 
-Eigen::Vector3f MeshSDF::gradient(const Eigen::Vector3f& p) const
+Vec3r MeshSDF::gradient(const Vec3r& p) const
 {
     assert(_with_gradient);
-    const Eigen::Vector3f& ijk = _gridIJKFromPoint(p);
+    const Vec3r& ijk = _gridIJKFromPoint(p);
     const int i0 = std::floor(ijk[0]);    const int i1 = i0+1;
     const int j0 = std::floor(ijk[1]);    const int j1 = j0+1;
     const int k0 = std::floor(ijk[2]);    const int k1 = k0+1;
     if (i0 >= 0 && i0 < _N && j0 >= 0 && j0 < _N && k0 >= 0 && k0 < _N)
     {
-        const double id = ijk[0] - i0;
-        const double jd = ijk[1] - j0;
-        const double kd = ijk[2] - k0;
+        const Real id = ijk[0] - i0;
+        const Real jd = ijk[1] - j0;
+        const Real kd = ijk[2] - k0;
 
-        const Eigen::Vector3f& c000 = _gradient_grid.at(i0,j0,k0);    const Eigen::Vector3f& c100 = _gradient_grid.at(i1,j0,k0);
-        const Eigen::Vector3f& c001 = _gradient_grid.at(i0,j0,k1);    const Eigen::Vector3f& c101 = _gradient_grid.at(i1,j0,k1);
-        const Eigen::Vector3f& c010 = _gradient_grid.at(i0,j1,k0);    const Eigen::Vector3f& c110 = _gradient_grid.at(i1,j1,k0);
-        const Eigen::Vector3f& c011 = _gradient_grid.at(i0,j1,k1);    const Eigen::Vector3f& c111 = _gradient_grid.at(i1,j1,k1);
+        const Vec3r& c000 = _gradient_grid.at(i0,j0,k0);    const Vec3r& c100 = _gradient_grid.at(i1,j0,k0);
+        const Vec3r& c001 = _gradient_grid.at(i0,j0,k1);    const Vec3r& c101 = _gradient_grid.at(i1,j0,k1);
+        const Vec3r& c010 = _gradient_grid.at(i0,j1,k0);    const Vec3r& c110 = _gradient_grid.at(i1,j1,k0);
+        const Vec3r& c011 = _gradient_grid.at(i0,j1,k1);    const Vec3r& c111 = _gradient_grid.at(i1,j1,k1);
         return vectorTriSlerp(c000, c100, c010, c110, c001, c101, c011, c111, id, jd, kd);
     }
 
@@ -117,7 +117,7 @@ void MeshSDF::writeToFile(const std::string& filename) const
     {
         for (int i = 0; i < _N; i++)    for (int j = 0; j < _N; j++)    for (int k = 0; k < _N; k++)
         {
-            Eigen::Vector3f grad = _gradient_grid.at(i,j,k);
+            Vec3r grad = _gradient_grid.at(i,j,k);
             ss << formatFloat(grad[0],FLOAT_PRECISION) << " " << formatFloat(grad[1],FLOAT_PRECISION) << " " << formatFloat(grad[2],FLOAT_PRECISION) << "\n";
         }
     }
@@ -138,7 +138,7 @@ void MeshSDF::writeToFile(const std::string& filename) const
 
 void MeshSDF::_loadSDFFromFile(const std::string& filename)
 {
-    const int FLOAT_CHAR_WIDTH = FLOAT_PRECISION + 6;   // the number of characters a float takes up in the file
+    const int FLOAT_CHAR_WIDTH = FLOAT_PRECISION + 6;   // the number of characters a Real takes up in the file
 
     // fast read from file using mmap - https://stackoverflow.com/a/17925197
     struct stat sb;
@@ -149,7 +149,7 @@ void MeshSDF::_loadSDFFromFile(const std::string& filename)
     char* line;
 
     int grid_index_1D = 0;
-    float f;
+    Real f;
     bool reading_distances = true;
     bool reading_gradients = false;
     // map the file
@@ -190,17 +190,17 @@ void MeshSDF::_loadSDFFromFile(const std::string& filename)
         const int j = (grid_index_1D / _N) % _N;
         const int k = grid_index_1D % _N;
 
-        // if we are reading distances, we only expect a single float per line
+        // if we are reading distances, we only expect a single Real per line
         if (reading_distances)
         {
-            // read float from buffer    
+            // read Real from buffer    
             _distance_grid(i,j,k) = atof(line);
         }
 
-        // if we are reading gradients, we expect 3 floats per line separated by spaces
+        // if we are reading gradients, we expect 3 Reals per line separated by spaces
         if (reading_gradients)
         {
-            // read float 3-vector from char buffer
+            // read Real 3-vector from char buffer
             parseVector3f(_gradient_grid(i,j,k), line, FLOAT_CHAR_WIDTH);
         }
 
@@ -248,8 +248,8 @@ void MeshSDF::_makeSDF(const VertexMat& verts, const TriangleMat& tris, int padd
     _distance_grid.resize(_N, _N, _N);
 
     // compute the bounding box around the vertices
-    const Eigen::Vector3f vertex_mins = verts.rowwise().minCoeff();
-    const Eigen::Vector3f vertex_maxs = verts.rowwise().maxCoeff();
+    const Vec3r vertex_mins = verts.rowwise().minCoeff();
+    const Vec3r vertex_maxs = verts.rowwise().maxCoeff();
 
     // compute the cell size for the grid in absolute units, accomodating for padding cells on all sides
     _cell_size = (vertex_maxs - vertex_mins) / (_N - padding*2);
@@ -259,7 +259,7 @@ void MeshSDF::_makeSDF(const VertexMat& verts, const TriangleMat& tris, int padd
     _bbox_max = vertex_maxs + _cell_size * padding;
 
     // initialize distances with really large value
-    _distance_grid.assign(std::numeric_limits<float>::max());
+    _distance_grid.assign(std::numeric_limits<Real>::max());
 
 
     Array3i closest_tri(_N, _N, _N, -1);    // keeps track of index of closest triangle to each grid point
@@ -283,14 +283,14 @@ void MeshSDF::_makeSDF(const VertexMat& verts, const TriangleMat& tris, int padd
         const int q = tris(1,ti);
         const int r = tris(2,ti);
 
-        const Eigen::Vector3f& vp = verts.col(p);
-        const Eigen::Vector3f& vq = verts.col(q);
-        const Eigen::Vector3f& vr = verts.col(r);
+        const Vec3r& vp = verts.col(p);
+        const Vec3r& vq = verts.col(q);
+        const Vec3r& vr = verts.col(r);
 
         // coordinates in grid to high precision
-        double fip=((double)vp[0]-_bbox_min[0])/_cell_size[0], fjp=((double)vp[1]-_bbox_min[1])/_cell_size[1], fkp=((double)vp[2]-_bbox_min[2])/_cell_size[2];
-        double fiq=((double)vq[0]-_bbox_min[0])/_cell_size[0], fjq=((double)vq[1]-_bbox_min[1])/_cell_size[1], fkq=((double)vq[2]-_bbox_min[2])/_cell_size[2];
-        double fir=((double)vr[0]-_bbox_min[0])/_cell_size[0], fjr=((double)vr[1]-_bbox_min[1])/_cell_size[1], fkr=((double)vr[2]-_bbox_min[2])/_cell_size[2];
+        Real fip=((Real)vp[0]-_bbox_min[0])/_cell_size[0], fjp=((Real)vp[1]-_bbox_min[1])/_cell_size[1], fkp=((Real)vp[2]-_bbox_min[2])/_cell_size[2];
+        Real fiq=((Real)vq[0]-_bbox_min[0])/_cell_size[0], fjq=((Real)vq[1]-_bbox_min[1])/_cell_size[1], fkq=((Real)vq[2]-_bbox_min[2])/_cell_size[2];
+        Real fir=((Real)vr[0]-_bbox_min[0])/_cell_size[0], fjr=((Real)vr[1]-_bbox_min[1])/_cell_size[1], fkr=((Real)vr[2]-_bbox_min[2])/_cell_size[2];
 
         // do distances nearby
         int i0=std::clamp(int(std::min({fip,fiq,fir}))-exact_band, 0, _N-1), i1=std::clamp(int(std::max({fip,fiq,fir}))+exact_band+1, 0, _N-1);
@@ -299,8 +299,8 @@ void MeshSDF::_makeSDF(const VertexMat& verts, const TriangleMat& tris, int padd
 
         for (int k = k0; k <= k1; k++)  for (int j = j0; j <= j1; j++)  for (int i = i0; i <= i1; i++)
         {
-            const Eigen::Vector3f grid_point(i*_cell_size[0]+_bbox_min[0], j*_cell_size[1]+_bbox_min[1], k*_cell_size[2]+_bbox_min[2]);
-            float dist = pointTriangleDistance(grid_point, vp, vq, vr);
+            const Vec3r grid_point(i*_cell_size[0]+_bbox_min[0], j*_cell_size[1]+_bbox_min[1], k*_cell_size[2]+_bbox_min[2]);
+            Real dist = pointTriangleDistance(grid_point, vp, vq, vr);
             if(dist < _distance_grid(i,j,k)){
                 _distance_grid(i,j,k) = dist;
                 closest_tri(i,j,k) = ti;
@@ -314,12 +314,12 @@ void MeshSDF::_makeSDF(const VertexMat& verts, const TriangleMat& tris, int padd
         for (int k = k0; k <= k1; k++)  for (int j = j0; j <= j1; j++)
         {
             // check if this grid point is inside the triangle projected in the YZ-plane
-            double a, b, c;
+            Real a, b, c;
             bool in_triangle = pointInTriangle2D(j, k, fjp, fkp, fjq, fkq, fjr, fkr, a, b, c);
             
             if (in_triangle)
             {
-                double fi=a*fip+b*fiq+c*fir; // intersection i coordinate
+                Real fi=a*fip+b*fiq+c*fir; // intersection i coordinate
                 int i_interval=std::max(0, int(std::ceil(fi))); // intersection is in (i_interval-1,i_interval]
 
                 // SPECIAL CASE: the ray directly intersects a vertex or edge of the triangle
@@ -399,12 +399,12 @@ void MeshSDF::_makeSDF(const VertexMat& verts, const TriangleMat& tris, int padd
             const int q = tris(1,ti);
             const int r = tris(2,ti);
 
-            const Eigen::Vector3f& vp = verts.col(p);
-            const Eigen::Vector3f& vq = verts.col(q);
-            const Eigen::Vector3f& vr = verts.col(r);
+            const Vec3r& vp = verts.col(p);
+            const Vec3r& vq = verts.col(q);
+            const Vec3r& vr = verts.col(r);
 
-            const Eigen::Vector3f grid_point = _gridPointFromIJK(i,j,k);
-            const Eigen::Vector3f grad = pointTriangleDirection(grid_point, vp, vq, vr);
+            const Vec3r grid_point = _gridPointFromIJK(i,j,k);
+            const Vec3r grad = pointTriangleDirection(grid_point, vp, vq, vr);
 
             if (_distance_grid.at(i,j,k) < 0)   _gradient_grid.at(i,j,k) = -grad;
             else                                _gradient_grid.at(i,j,k) = grad;
@@ -422,7 +422,7 @@ void MeshSDF::_makeSDF(const VertexMat& verts, const TriangleMat& tris, int padd
 
 void MeshSDF::_checkNeighbor(const VertexMat& verts, const TriangleMat& tris, 
                         Array3i& closest_tri,
-                        const Eigen::Vector3f& grid_point,
+                        const Vec3r& grid_point,
                         int i0, int j0, int k0, int i1, int j1, int k1)
 {
     const int ti = closest_tri(i1,j1,k1);
@@ -433,11 +433,11 @@ void MeshSDF::_checkNeighbor(const VertexMat& verts, const TriangleMat& tris,
         const int q = tris(1,ti);
         const int r = tris(2,ti);
 
-        const Eigen::Vector3f& vp = verts.col(p);
-        const Eigen::Vector3f& vq = verts.col(q);
-        const Eigen::Vector3f& vr = verts.col(r);
+        const Vec3r& vp = verts.col(p);
+        const Vec3r& vq = verts.col(q);
+        const Vec3r& vr = verts.col(r);
         
-        float dist = pointTriangleDistance(grid_point, vp, vq, vr);
+        Real dist = pointTriangleDistance(grid_point, vp, vq, vr);
         if (dist < _distance_grid(i0,j0,k0))
         {
             _distance_grid(i0,j0,k0) = dist;
@@ -461,7 +461,7 @@ void MeshSDF::_sweep(const VertexMat& verts, const TriangleMat& tris,
     else{ k0=_N-2; k1=-1; }
 
     for(int k=k0; k!=k1; k+=dk) for(int j=j0; j!=j1; j+=dj) for(int i=i0; i!=i1; i+=di){
-      const Eigen::Vector3f grid_point = _gridPointFromIJK(i,j,k);
+      const Vec3r grid_point = _gridPointFromIJK(i,j,k);
       _checkNeighbor(verts, tris, closest_tri, grid_point, i, j, k, i-di, j,    k   );
       _checkNeighbor(verts, tris, closest_tri, grid_point, i, j, k, i,    j-dj, k   );
       _checkNeighbor(verts, tris, closest_tri, grid_point, i, j, k, i-di, j-dj, k   );
@@ -473,12 +473,12 @@ void MeshSDF::_sweep(const VertexMat& verts, const TriangleMat& tris,
 
 }
 
-Eigen::Vector3f MeshSDF::_gridPointFromIJK(int i, int j, int k) const
+Vec3r MeshSDF::_gridPointFromIJK(int i, int j, int k) const
 {
-    return Eigen::Vector3f(i*_cell_size[0]+_bbox_min[0], j*_cell_size[1]+_bbox_min[1], k*_cell_size[2]+_bbox_min[2]);
+    return Vec3r(i*_cell_size[0]+_bbox_min[0], j*_cell_size[1]+_bbox_min[1], k*_cell_size[2]+_bbox_min[2]);
 }
 
-Eigen::Vector3f MeshSDF::_gridIJKFromPoint(const Eigen::Vector3f& p) const
+Vec3r MeshSDF::_gridIJKFromPoint(const Vec3r& p) const
 {
     return (p - _bbox_min).array() / _cell_size.array();
 }

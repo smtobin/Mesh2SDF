@@ -26,10 +26,10 @@ class MeshSDF
     MeshSDF(const std::string& filename);
 
     /** Evaluates the SDF at the given point. */
-    float evaluate(const Eigen::Vector3f& p) const;
+    Real evaluate(const Vec3r& p) const;
     
     /** Computes the gradient of the SDF at the given point. */
-    Eigen::Vector3f gradient(const Eigen::Vector3f& p) const;
+    Vec3r gradient(const Vec3r& p) const;
 
     /** Writes the SDF to specified file. */
     void writeToFile(const std::string& filename) const;
@@ -49,7 +49,7 @@ class MeshSDF
      */
     void _checkNeighbor(const VertexMat& verts, const TriangleMat& tris, 
                         Array3i& closest_tri,
-                        const Eigen::Vector3f& grid_point,
+                        const Vec3r& grid_point,
                         int i0, int j0, int k0, int i1, int j1, int k1);
 
     /** Helper function for SDF computation.
@@ -60,24 +60,24 @@ class MeshSDF
                 int di, int dj, int dk);
 
     /** Returns the global coordinates of a point in the SDF grid given (i,j,k) grid indices. */
-    Eigen::Vector3f _gridPointFromIJK(int i, int j, int k) const;
+    Vec3r _gridPointFromIJK(int i, int j, int k) const;
 
     /** Returns DECIMAL (i,j,k) grid indices given a point in global coordinates. */
-    Eigen::Vector3f _gridIJKFromPoint(const Eigen::Vector3f& p) const;
+    Vec3r _gridIJKFromPoint(const Vec3r& p) const;
 
     private:
     static constexpr int FLOAT_PRECISION = 10;  // the number of places after the decimal to use when printing the SDF to file
 
     int _N;  // number of voxels per side in the grid
-    Eigen::Vector3f _cell_size;  // size of each voxel in the grid
+    Vec3r _cell_size;  // size of each voxel in the grid
 
-    Eigen::Vector3f _bbox_min;  // bounding box minimum for the SDF grid
-    Eigen::Vector3f _bbox_max;  // bounding box maximum for the SDF grid
+    Vec3r _bbox_min;  // bounding box minimum for the SDF grid
+    Vec3r _bbox_max;  // bounding box maximum for the SDF grid
 
     bool _with_gradient; // whether or not the gradient of the SDF was computed and stored along with the distance
 
-    Array3<float> _distance_grid;  // stores the distances in a grid
-    Array3<Eigen::Vector3f> _gradient_grid;  // stores the gradients in a grid - this will be empty if with_gradient=false
+    Array3<Real> _distance_grid;  // stores the distances in a grid
+    Array3<Vec3r> _gradient_grid;  // stores the gradients in a grid - this will be empty if with_gradient=false
 };
 
 } // namespace mesh2sdf
