@@ -13,7 +13,7 @@
 namespace mesh2sdf
 {
 
-#ifdef DOUBLE_PRECISION
+#ifdef MESH2SDF_DOUBLE_PRECISION
 typedef double Real;
 #else
 typedef float Real;
