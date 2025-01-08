@@ -10,6 +10,9 @@ namespace mesh2sdf
 class MeshSDF
 {
     public:
+    /** Empty constructor */
+    MeshSDF();
+
     /** Construct a SDF from input vertices and triangles.
      * @param verts - the vertices of the mesh
      * @param tris - the triangles of the mesh, specified as columns of 3 integers

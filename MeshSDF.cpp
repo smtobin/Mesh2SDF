@@ -19,6 +19,10 @@
 namespace mesh2sdf
 {
 
+MeshSDF::MeshSDF()
+    : _N(0), _cell_size(), _bbox_min(), _bbox_max(), _with_gradient(false)
+{}
+
 MeshSDF::MeshSDF(const VertexMat& verts, const TriangleMat& tris, int grid_size, int padding, bool with_gradient)
     : _N(grid_size), _with_gradient(with_gradient)
 {
