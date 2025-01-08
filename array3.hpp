@@ -1,11 +1,14 @@
-#ifndef __ARRAY3_HPP
-#define __ARRAY3_HPP
+#ifndef __MESH2SDF_ARRAY3_HPP
+#define __MESH2SDF_ARRAY3_HPP
 
 // Used from Christopher Batty's SDFGen implementation: https://github.com/christopherbatty/SDFGen
 
 #include <algorithm>
 #include <cassert>
 #include <vector>
+
+namespace mesh2sdf
+{
 
 template<class T, class ArrayT=std::vector<T> >
 struct Array3
@@ -256,5 +259,7 @@ struct Array3
    void trim(void)
    { a.trim(); }
 };
+
+} // namespace mesh2sdf
 
 #endif // __ARRAY3_HPP

@@ -1,5 +1,5 @@
-#ifndef __MESH_SDF_HPP
-#define __MESH_SDF_HPP
+#ifndef __MESH2SDF_MESH_SDF_HPP
+#define __MESH2SDF_MESH_SDF_HPP
 
 #include "types.hpp"
 #include "array3.hpp"

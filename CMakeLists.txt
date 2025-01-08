@@ -33,7 +33,7 @@ endif()
 
 add_library(mesh2sdf MeshSDF.cpp util.cpp)
 target_link_libraries(mesh2sdf Eigen3::Eigen)
-set_target_properties(mesh2sdf PROPERTIES PUBLIC_HEADER MeshSDF.hpp)
+set_target_properties(mesh2sdf PROPERTIES PUBLIC_HEADER "MeshSDF.hpp;array3.hpp;types.hpp;util.hpp")
 
 add_executable(${PROJECT_NAME} main.cpp)
 target_link_libraries(${PROJECT_NAME} mesh2sdf)

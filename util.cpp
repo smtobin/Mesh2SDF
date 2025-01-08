@@ -7,6 +7,9 @@
 #include <iomanip>
 #include <fstream>
 
+namespace mesh2sdf
+{
+
 /** Returns the minimum distance from a point to a line segment
  * @param x0 - the point
  * @param x1 - one end of the line segment
@@ -70,7 +73,7 @@ Eigen::Vector3f pointTriangleDirection(const Eigen::Vector3f &x0, const Eigen::V
         const Eigen::Vector3f closest_point_on_triangle = w23 * x1 + w31 * x2 + w12 * x3;
         const Eigen::Vector3f diff = x0 - closest_point_on_triangle;
         const float dist = diff.norm();
-        if (dist < EPS) // check if we're on the plane - if so use the plane normal as the gradient
+        if (dist < MESH2SDF_EPS) // check if we're on the plane - if so use the plane normal as the gradient
         {
             const Eigen::Vector3f x21 = x2 - x1;
             const Eigen::Vector3f x31 = x3 - x1;
@@ -144,7 +147,7 @@ bool pointInTriangle2D(double x0, double y0,
     b = ((y3 - y1) * (x0 - x3) + (x1 - x3) * (y0 - y3)) / ((y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3));
     c = 1 - a - b;
 
-    return (a + EPS) >= 0 && a <= 1 && (b + EPS) >= 0 && b <= 1 && (c + EPS) >= 0 && c <= 1;
+    return (a + MESH2SDF_EPS) >= 0 && a <= 1 && (b + MESH2SDF_EPS) >= 0 && b <= 1 && (c + MESH2SDF_EPS) >= 0 && c <= 1;
 }
 
 
@@ -163,7 +166,7 @@ Eigen::Vector3f vectorSlerp(const Eigen::Vector3f& v1, const Eigen::Vector3f& v2
     {
         // from https://math.stackexchange.com/a/211195 - find perpendicular vector
         Eigen::Vector3f perp_v(v1[2], v1[2], -v1[0]-v1[1]);
-        if (perp_v.squaredNorm() < EPS) perp_v = Eigen::Vector3f(-v1[1]-v1[2], v1[0], v1[0]);
+        if (perp_v.squaredNorm() < MESH2SDF_EPS) perp_v = Eigen::Vector3f(-v1[1]-v1[2], v1[0], v1[0]);
         perp_v.normalize();
 
         // this perpendicular vector is the halfway point
@@ -346,5 +349,7 @@ VerticesAndTriangles loadMeshDataFromFile(const std::string &filename)
 
     return std::make_pair(verts, tris);
 }
+
+} // namespace mesh2sdf
 
 #endif

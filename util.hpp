@@ -1,7 +1,10 @@
-#ifndef __UTIL_HPP
-#define __UTIL_HPP
+#ifndef __MESH2SDF_UTIL_HPP
+#define __MESH2SDF_UTIL_HPP
 
 #include "types.hpp"
+
+namespace mesh2sdf
+{
 
 // =========== GEOMETRY UTILS ==============
 
@@ -97,5 +100,8 @@ VerticesAndTriangles loadMeshDataFromFile(const std::string& filename);
 VerticesAndTriangles loadMeshDataFromFile(const std::string& filename);
 
 #endif
+
+
+} // namespace mesh2sdf
 
 #endif

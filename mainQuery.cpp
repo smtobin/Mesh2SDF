@@ -4,15 +4,17 @@
 
 #include <iostream>
 
+using namespace mesh2sdf;
+
 int main(int argc, char* argv[])
 {
     // this is more just meant to be a sort of playground for trying out the API
     const auto [verts, tris] = loadMeshDataFromFile("obj/cube.obj");    // cube.obj is a cube spanning from (0,0,0) to (1,1,1)
-    mesh2sdf::MeshSDF sdf1(verts, tris, 128, 8, true);
+    MeshSDF sdf1(verts, tris, 128, 8, true);
     sdf1.writeToFile("output.sdf");
 
     // load the SDF we just saved back to make sure that it is the same as the original we just created
-    mesh2sdf::MeshSDF sdf2("output.sdf");
+    MeshSDF sdf2("output.sdf");
 
     // test the SDFs by querying a point inside the cube
     const Eigen::Vector3f p(0.6, 0.2, 0.9);

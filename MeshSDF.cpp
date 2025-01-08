@@ -321,15 +321,15 @@ void MeshSDF::_makeSDF(const VertexMat& verts, const TriangleMat& tris, int padd
                 // SPECIAL CASE: the ray directly intersects a vertex or edge of the triangle
                 //  - since vertices and edges are shared by multiple triangles, we must keep track of the vertices/edges we hit directly so that
                 //    we only count 1 intersection
-                if ( (a-EPS) <= 0 || (b-EPS) <= 0 || (c-EPS) <= 0)
+                if ( (a-MESH2SDF_EPS) <= 0 || (b-MESH2SDF_EPS) <= 0 || (c-MESH2SDF_EPS) <= 0)
                 {
                     unsigned direct_hit = -1;
-                    if ( (a-EPS) <= 0 && (b-EPS) <= 0)      direct_hit = r; // intersects vertex R
-                    else if ( (a-EPS) <= 0 && (c-EPS) <= 0) direct_hit = q; // intersects vertex Q
-                    else if ( (b-EPS) <= 0 && (c-EPS) <= 0) direct_hit = p; // intersects vertex P
-                    else if ( (a-EPS) <= 0) direct_hit = std::min(q,r); // intersects edge QR
-                    else if ( (b-EPS) <= 0) direct_hit = std::min(p,r); // intersects edge PR
-                    else if ( (c-EPS) <= 0) direct_hit = std::min(p,q); // intersects edge PQ
+                    if ( (a-MESH2SDF_EPS) <= 0 && (b-MESH2SDF_EPS) <= 0)      direct_hit = r; // intersects vertex R
+                    else if ( (a-MESH2SDF_EPS) <= 0 && (c-MESH2SDF_EPS) <= 0) direct_hit = q; // intersects vertex Q
+                    else if ( (b-MESH2SDF_EPS) <= 0 && (c-MESH2SDF_EPS) <= 0) direct_hit = p; // intersects vertex P
+                    else if ( (a-MESH2SDF_EPS) <= 0) direct_hit = std::min(q,r); // intersects edge QR
+                    else if ( (b-MESH2SDF_EPS) <= 0) direct_hit = std::min(p,r); // intersects edge PR
+                    else if ( (c-MESH2SDF_EPS) <= 0) direct_hit = std::min(p,q); // intersects edge PQ
                     else    assert(0);  // shouldn't ever get to here
 
                     // convert (i,j,k) to a unique integer key for the map

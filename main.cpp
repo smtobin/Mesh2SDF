@@ -4,6 +4,8 @@
 
 #include <iostream>
 
+using namespace mesh2sdf;
+
 int main(int argc, char* argv[])
 {
     if (argc != 5)
@@ -30,7 +32,7 @@ int main(int argc, char* argv[])
     {
         const auto [verts, tris] = loadMeshDataFromFile(filename);  // load vertices and triangles from mesh file
 
-        mesh2sdf::MeshSDF sdf(verts, tris, num_cells, padding, with_gradients); // create SDF from mesh data
+        MeshSDF sdf(verts, tris, num_cells, padding, with_gradients); // create SDF from mesh data
         
         sdf.writeToFile("output.sdf"); // write SDF to file
     }
