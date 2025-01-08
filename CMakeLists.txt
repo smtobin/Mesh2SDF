@@ -33,6 +33,7 @@ endif()
 
 add_library(mesh2sdf MeshSDF.cpp util.cpp)
 target_link_libraries(mesh2sdf Eigen3::Eigen)
+set_target_properties(mesh2sdf PROPERTIES PUBLIC_HEADER MeshSDF.hpp)
 
 add_executable(${PROJECT_NAME} main.cpp)
 target_link_libraries(${PROJECT_NAME} mesh2sdf)
@@ -42,7 +43,8 @@ target_link_libraries(QuerySDF mesh2sdf)
 
 install(TARGETS mesh2sdf EXPORT mesh2sdf-targets
   RUNTIME DESTINATION bin/${PROJECT_NAME}
-  ARCHIVE DESTINATION lib/${PROJECT_NAME})
+  LIBRARY DESTINATION lib/${PROJECT_NAME}
+  PUBLIC_HEADER DESTINATION include/${PROJECT_NAME})
 
 if (assimp_FOUND)
   target_compile_definitions(${PROJECT_NAME} PRIVATE HAVE_ASSIMP)
