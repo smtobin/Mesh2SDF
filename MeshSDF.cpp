@@ -20,7 +20,10 @@ namespace mesh2sdf
 {
 
 MeshSDF::MeshSDF()
-    : _N(0), _cell_size(), _bbox_min(), _bbox_max(), _with_gradient(false)
+    : _N(0), _cell_size(),
+     _grid_bbox_min(Vec3r::Zero()), _grid_bbox_max(Vec3r::Zero()),
+     _mesh_bbox_min(Vec3r::Zero()), _mesh_bbox_max(Vec3r::Zero()),
+     _with_gradient(false)
 {}
 
 MeshSDF::MeshSDF(const VertexMat& verts, const TriangleMat& tris, int grid_size, int padding, bool with_gradient)
@@ -30,7 +33,10 @@ MeshSDF::MeshSDF(const VertexMat& verts, const TriangleMat& tris, int grid_size,
 }
 
 MeshSDF::MeshSDF(const std::string& filename)
-    : _N(0), _cell_size(), _bbox_min(), _bbox_max(), _with_gradient(false)
+    : _N(0), _cell_size(),
+     _grid_bbox_min(Vec3r::Zero()), _grid_bbox_max(Vec3r::Zero()),
+     _mesh_bbox_min(Vec3r::Zero()), _mesh_bbox_max(Vec3r::Zero()),
+     _with_gradient(false)
 {
     _loadSDFFromFile(filename);
 }
@@ -127,8 +133,11 @@ void MeshSDF::writeToFile(const std::string& filename) const
     std::stringstream ss;
     ss << _N << " " << _N << " " << _N << "\n"; // print grid size
     ss << formatFloat(_cell_size[0],FLOAT_PRECISION) << " " << formatFloat(_cell_size[1],FLOAT_PRECISION) << " " << formatFloat(_cell_size[2],FLOAT_PRECISION) << "\n";    // print cell size
-    ss << formatFloat(_bbox_min[0],FLOAT_PRECISION) << " " << formatFloat(_bbox_min[1],FLOAT_PRECISION) << " " << formatFloat(_bbox_min[2],FLOAT_PRECISION) << "\n";
-    ss << " " << formatFloat(_bbox_max[0],FLOAT_PRECISION) << " " << formatFloat(_bbox_max[1],FLOAT_PRECISION) << " " << formatFloat(_bbox_max[2],FLOAT_PRECISION) << "\n";
+    ss << formatFloat(_grid_bbox_min[0],FLOAT_PRECISION) << " " << formatFloat(_grid_bbox_min[1],FLOAT_PRECISION) << " " << formatFloat(_grid_bbox_min[2],FLOAT_PRECISION) << "\n";
+    ss << formatFloat(_grid_bbox_max[0],FLOAT_PRECISION) << " " << formatFloat(_grid_bbox_max[1],FLOAT_PRECISION) << " " << formatFloat(_grid_bbox_max[2],FLOAT_PRECISION) << "\n";
+    ss << formatFloat(_mesh_bbox_min[0],FLOAT_PRECISION) << " " << formatFloat(_mesh_bbox_min[1],FLOAT_PRECISION) << " " << formatFloat(_mesh_bbox_min[2],FLOAT_PRECISION) << "\n";  
+    ss << formatFloat(_mesh_bbox_max[0],FLOAT_PRECISION) << " " << formatFloat(_mesh_bbox_max[1],FLOAT_PRECISION) << " " << formatFloat(_mesh_bbox_max[2],FLOAT_PRECISION) << "\n"; 
+
 
     // print distances
     for (int i = 0; i < _N; i++)    for (int j = 0; j < _N; j++)    for (int k = 0; k < _N; k++)
@@ -162,7 +171,7 @@ void MeshSDF::writeToFile(const std::string& filename) const
 
 void MeshSDF::_loadSDFFromFile(const std::string& filename)
 {
-    const int FLOAT_CHAR_WIDTH = FLOAT_PRECISION + 6;   // the number of characters a Real takes up in the file
+    const int REAL_CHAR_WIDTH = FLOAT_PRECISION + 6;   // the number of characters a Real takes up in the file
 
     // fast read from file using mmap - https://stackoverflow.com/a/17925197
     struct stat sb;
@@ -189,13 +198,18 @@ void MeshSDF::_loadSDFFromFile(const std::string& filename)
     _distance_grid.resize(_N, _N, _N);  // resize the distance grid accordingly
     while (*data++ != '\n' && cntr++ < sb.st_size);     // move to next line
     
-    parseVector3f(_cell_size, data, FLOAT_CHAR_WIDTH);  // read cell size
+    parseVector3f(_cell_size, data, REAL_CHAR_WIDTH);  // read cell size
     while (*data++ != '\n' && cntr++ < sb.st_size);     // move to next line
 
     
-    parseVector3f(_bbox_min, data, FLOAT_CHAR_WIDTH);   // read minimum bounding box point
+    parseVector3f(_grid_bbox_min, data, REAL_CHAR_WIDTH);   // read minimum grid bounding box point
     while (*data++ != '\n' && cntr++ < sb.st_size);     // move to next line
-    parseVector3f(_bbox_max, data, FLOAT_CHAR_WIDTH);   // read maximum bounding box point
+    parseVector3f(_grid_bbox_max, data, REAL_CHAR_WIDTH);   // read maximum grid bounding box point
+    while (*data++ != '\n' && cntr++ < sb.st_size);     // move to next line
+
+    parseVector3f(_mesh_bbox_min, data, REAL_CHAR_WIDTH);   // read minimum mesh bounding box point
+    while (*data++ != '\n' && cntr++ < sb.st_size);     // move to next line
+    parseVector3f(_mesh_bbox_max, data, REAL_CHAR_WIDTH);   // read maximum mesh bounding box point
     while (*data++ != '\n' && cntr++ < sb.st_size);     // move to next line
 
     // read distances and gradients (when applicable)
@@ -225,7 +239,7 @@ void MeshSDF::_loadSDFFromFile(const std::string& filename)
         if (reading_gradients)
         {
             // read Real 3-vector from char buffer
-            parseVector3f(_gradient_grid(i,j,k), line, FLOAT_CHAR_WIDTH);
+            parseVector3f(_gradient_grid(i,j,k), line, REAL_CHAR_WIDTH);
         }
 
         grid_index_1D++;
@@ -238,7 +252,7 @@ void MeshSDF::_loadSDFFromFile(const std::string& filename)
                 reading_distances = false;
 
                 // check if there are gradients after the distances
-                if (sb.st_size - cntr > _N*_N*_N*(FLOAT_CHAR_WIDTH + 3))
+                if (sb.st_size - cntr > _N*_N*_N*(REAL_CHAR_WIDTH + 3))
                 {
                     // if so, resize the gradient grid appropriately
                     _gradient_grid.resize(_N, _N, _N);
@@ -262,7 +276,8 @@ void MeshSDF::_loadSDFFromFile(const std::string& filename)
     std::cout << "Finished reading SDF from file..." << std::endl;
     std::cout << "\tGrid size: " << _N << " x " << _N << " x " << _N << std::endl;
     std::cout << "\tCell size: " << _cell_size[0] << ", " << _cell_size[1] << ", " << _cell_size[2] << std::endl;
-    std::cout << "\tBounding box: (" << _bbox_min[0] << ", " << _bbox_min[1] << ", " << _bbox_min[2] << ") to (" << _bbox_max[0] << ", " << _bbox_max[1] << ", " << _bbox_max[2] << ")" << std::endl;
+    std::cout << "\tGrid Bounding box: (" << _grid_bbox_min[0] << ", " << _grid_bbox_min[1] << ", " << _grid_bbox_min[2] << ") to (" << _grid_bbox_max[0] << ", " << _grid_bbox_max[1] << ", " << _grid_bbox_max[2] << ")" << std::endl;
+    std::cout << "\tMesh Bounding box: (" << _mesh_bbox_min[0] << ", " << _mesh_bbox_min[1] << ", " << _mesh_bbox_min[2] << ") to (" << _mesh_bbox_max[0] << ", " << _mesh_bbox_max[1] << ", " << _mesh_bbox_max[2] << ")" << std::endl;
     std::cout << "\tWith gradients: " << (_with_gradient ? "True" : "False") << std::endl;
 }
 
@@ -279,8 +294,12 @@ void MeshSDF::_makeSDF(const VertexMat& verts, const TriangleMat& tris, int padd
     _cell_size = (vertex_maxs - vertex_mins) / (_N - padding*2);
 
     // compute the SDF bounding box limits
-    _bbox_min = vertex_mins - _cell_size * padding;
-    _bbox_max = vertex_maxs + _cell_size * padding;
+    _grid_bbox_min = vertex_mins - _cell_size * padding;
+    _grid_bbox_max = vertex_maxs + _cell_size * padding;
+
+    // store the mesh bounding box limits
+    _mesh_bbox_min = vertex_mins;
+    _mesh_bbox_max = vertex_maxs;
 
     // initialize distances with really large value
     _distance_grid.assign(std::numeric_limits<Real>::max());
@@ -312,9 +331,9 @@ void MeshSDF::_makeSDF(const VertexMat& verts, const TriangleMat& tris, int padd
         const Vec3r& vr = verts.col(r);
 
         // coordinates in grid to high precision
-        Real fip=((Real)vp[0]-_bbox_min[0])/_cell_size[0], fjp=((Real)vp[1]-_bbox_min[1])/_cell_size[1], fkp=((Real)vp[2]-_bbox_min[2])/_cell_size[2];
-        Real fiq=((Real)vq[0]-_bbox_min[0])/_cell_size[0], fjq=((Real)vq[1]-_bbox_min[1])/_cell_size[1], fkq=((Real)vq[2]-_bbox_min[2])/_cell_size[2];
-        Real fir=((Real)vr[0]-_bbox_min[0])/_cell_size[0], fjr=((Real)vr[1]-_bbox_min[1])/_cell_size[1], fkr=((Real)vr[2]-_bbox_min[2])/_cell_size[2];
+        Real fip=((Real)vp[0]-_grid_bbox_min[0])/_cell_size[0], fjp=((Real)vp[1]-_grid_bbox_min[1])/_cell_size[1], fkp=((Real)vp[2]-_grid_bbox_min[2])/_cell_size[2];
+        Real fiq=((Real)vq[0]-_grid_bbox_min[0])/_cell_size[0], fjq=((Real)vq[1]-_grid_bbox_min[1])/_cell_size[1], fkq=((Real)vq[2]-_grid_bbox_min[2])/_cell_size[2];
+        Real fir=((Real)vr[0]-_grid_bbox_min[0])/_cell_size[0], fjr=((Real)vr[1]-_grid_bbox_min[1])/_cell_size[1], fkr=((Real)vr[2]-_grid_bbox_min[2])/_cell_size[2];
 
         // do distances nearby
         int i0=std::clamp(int(std::min({fip,fiq,fir}))-exact_band, 0, _N-1), i1=std::clamp(int(std::max({fip,fiq,fir}))+exact_band+1, 0, _N-1);
@@ -323,7 +342,7 @@ void MeshSDF::_makeSDF(const VertexMat& verts, const TriangleMat& tris, int padd
 
         for (int k = k0; k <= k1; k++)  for (int j = j0; j <= j1; j++)  for (int i = i0; i <= i1; i++)
         {
-            const Vec3r grid_point(i*_cell_size[0]+_bbox_min[0], j*_cell_size[1]+_bbox_min[1], k*_cell_size[2]+_bbox_min[2]);
+            const Vec3r grid_point(i*_cell_size[0]+_grid_bbox_min[0], j*_cell_size[1]+_grid_bbox_min[1], k*_cell_size[2]+_grid_bbox_min[2]);
             Real dist = pointTriangleDistance(grid_point, vp, vq, vr);
             if(dist < _distance_grid(i,j,k)){
                 _distance_grid(i,j,k) = dist;
@@ -439,7 +458,7 @@ void MeshSDF::_makeSDF(const VertexMat& verts, const TriangleMat& tris, int padd
     std::cout << "Finished creating SDF from mesh..." << std::endl;
     std::cout << "\tGrid size: " << _N << " x " << _N << " x " << _N << std::endl;
     std::cout << "\tCell size: " << _cell_size[0] << ", " << _cell_size[1] << ", " << _cell_size[2] << std::endl;
-    std::cout << "\tBounding box: (" << _bbox_min[0] << ", " << _bbox_min[1] << ", " << _bbox_min[2] << ") to (" << _bbox_max[0] << ", " << _bbox_max[1] << ", " << _bbox_max[2] << ")" << std::endl;
+    std::cout << "\tBounding box: (" << _grid_bbox_min[0] << ", " << _grid_bbox_min[1] << ", " << _grid_bbox_min[2] << ") to (" << _grid_bbox_max[0] << ", " << _grid_bbox_max[1] << ", " << _grid_bbox_max[2] << ")" << std::endl;
     std::cout << "\tWith gradients: " << (_with_gradient ? "True" : "False") << std::endl;
     
 }
@@ -499,17 +518,17 @@ void MeshSDF::_sweep(const VertexMat& verts, const TriangleMat& tris,
 
 Vec3r MeshSDF::_gridPointFromIJK(int i, int j, int k) const
 {
-    return Vec3r(i*_cell_size[0]+_bbox_min[0], j*_cell_size[1]+_bbox_min[1], k*_cell_size[2]+_bbox_min[2]);
+    return Vec3r(i*_cell_size[0]+_grid_bbox_min[0], j*_cell_size[1]+_grid_bbox_min[1], k*_cell_size[2]+_grid_bbox_min[2]);
 }
 
 Vec3r MeshSDF::_gridPointFromIJK(Real i, Real j, Real k) const
 {
-    return Vec3r(i*_cell_size[0]+_bbox_min[0], j*_cell_size[1]+_bbox_min[1], k*_cell_size[2]+_bbox_min[2]);
+    return Vec3r(i*_cell_size[0]+_grid_bbox_min[0], j*_cell_size[1]+_grid_bbox_min[1], k*_cell_size[2]+_grid_bbox_min[2]);
 }
 
 Vec3r MeshSDF::_gridIJKFromPoint(const Vec3r& p) const
 {
-    return (p - _bbox_min).array() / _cell_size.array();
+    return (p - _grid_bbox_min).array() / _cell_size.array();
 }
 
 Real MeshSDF::_interpolateDistanceGrid(int i0, int j0, int k0, int i1, int j1, int k1, int id, int jd, int kd) const

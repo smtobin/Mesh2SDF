@@ -16,6 +16,13 @@ int main(int argc, char* argv[])
     // load the SDF we just saved back to make sure that it is the same as the original we just created
     MeshSDF sdf2("output.sdf");
 
+    BoundingBox grid_bbox = sdf2.gridBoundingBox();
+    BoundingBox mesh_bbox = sdf2.meshBoundingBox();
+    std::cout << "Grid bbox: (" << grid_bbox.first[0] << ", " << grid_bbox.first[1] << ", " << grid_bbox.first[2] << ") to ("
+        << grid_bbox.second[0] << ", " << grid_bbox.second[1] << ", " << grid_bbox.second[2] << ")" << std::endl;
+    std::cout << "Mesh bbox: (" << mesh_bbox.first[0] << ", " << mesh_bbox.first[1] << ", " << mesh_bbox.first[2] << ") to ("
+        << mesh_bbox.second[0] << ", " << mesh_bbox.second[1] << ", " << mesh_bbox.second[2] << ")" << std::endl;
+
     // test the SDFs by querying a point inside the cube
     const Vec3r p(0.6, 0.2, 0.9);
     const Real dist1 = sdf1.evaluate(p);

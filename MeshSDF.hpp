@@ -34,6 +34,12 @@ class MeshSDF
     /** Writes the SDF to specified file. */
     void writeToFile(const std::string& filename) const;
 
+    /** Returns the bounding box around the SDF grid. */
+    BoundingBox gridBoundingBox() const { return BoundingBox(_grid_bbox_min, _grid_bbox_max); }
+
+    /** Returns the bounding box around the mesh itself. */
+    BoundingBox meshBoundingBox() const { return BoundingBox(_mesh_bbox_min, _mesh_bbox_max); }
+
     private:
 
     /** Helper function that loads an SDF from file. Expects a .sdf file that was produced by this class. */
@@ -86,8 +92,11 @@ class MeshSDF
     int _N;  // number of voxels per side in the grid
     Vec3r _cell_size;  // size of each voxel in the grid
 
-    Vec3r _bbox_min;  // bounding box minimum for the SDF grid
-    Vec3r _bbox_max;  // bounding box maximum for the SDF grid
+    Vec3r _grid_bbox_min;  // bounding box minimum for the SDF grid
+    Vec3r _grid_bbox_max;  // bounding box maximum for the SDF grid
+
+    Vec3r _mesh_bbox_min;   // bounding box minimum for the mesh itself - this will likely be larger than the grid bbox min due to padding cells
+    Vec3r _mesh_bbox_max;   // bounding box maximum for the mesh itself - this will likely be smaller than the grid bbox max due to padding cells
 
     bool _with_gradient; // whether or not the gradient of the SDF was computed and stored along with the distance
 

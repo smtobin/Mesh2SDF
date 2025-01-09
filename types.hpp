@@ -25,6 +25,7 @@ typedef Eigen::Vector<Real, 3> Vec3r;
 typedef Array3<Vec3r> Array3Vec3r;
 typedef Eigen::Matrix<Real, 3, -1> VertexMat;
 typedef Eigen::Matrix<int, 3, -1> TriangleMat;
+typedef std::pair<Vec3r,Vec3r> BoundingBox; // first Vec3r is the minimum corner, second Vec3r is the maximum corner
 
 typedef std::pair<VertexMat,TriangleMat> VerticesAndTriangles;
 
