@@ -65,8 +65,6 @@ Real MeshSDF::evaluate(const Vec3r& p) const
     const int clamped_j0 = std::clamp(j0, 0, _N-1);     const int clamped_j1 = std::clamp(j1, 0, _N-1);
     const int clamped_k0 = std::clamp(k0, 0, _N-1);     const int clamped_k1 = std::clamp(k1, 0, _N-1);
 
-    std::cout << "i0: " << clamped_i0 << " j0: " << clamped_j0 << " k0: " << clamped_k0 << "\ni1: " << clamped_i1 << " j1: " << clamped_j1 << " k1: " << clamped_k1 << std::endl; 
-
     // get the distance and gradient from the border point
     const Real dist_from_border = _interpolateDistanceGrid(clamped_i0, clamped_j0, clamped_k0, clamped_i1, clamped_j1, clamped_k1, id, jd, kd);
     const Vec3r border_point = _gridPointFromIJK(   (clamped_i0 == i0) ? ijk[0] : (Real)clamped_i0,
