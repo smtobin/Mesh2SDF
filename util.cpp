@@ -7,6 +7,12 @@
 #include <iomanip>
 #include <fstream>
 
+#ifdef HAVE_ASSIMP
+#include <assimp/Importer.hpp>      // C++ importer interface
+#include <assimp/scene.h>           // Output data structure
+#include <assimp/postprocess.h>     // Post processing flags
+#endif
+
 namespace mesh2sdf
 {
 
@@ -228,10 +234,6 @@ void parseVector3f(Vec3r& vec, const char* str, int width)
 
 #ifdef HAVE_ASSIMP
 
-#include <assimp/Importer.hpp>      // C++ importer interface
-#include <assimp/scene.h>           // Output data structure
-#include <assimp/postprocess.h>     // Post processing flags
-
 VerticesAndTriangles loadMeshDataFromFile(const std::string& filename)
 {
     Assimp::Importer importer;
@@ -349,7 +351,8 @@ VerticesAndTriangles loadMeshDataFromFile(const std::string &filename)
 
     return std::make_pair(verts, tris);
 }
+#endif
 
 } // namespace mesh2sdf
 
-#endif
+

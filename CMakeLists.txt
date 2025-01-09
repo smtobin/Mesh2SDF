@@ -47,6 +47,7 @@ install(TARGETS mesh2sdf EXPORT mesh2sdf-targets
   PUBLIC_HEADER DESTINATION include/${PROJECT_NAME})
 
 if (assimp_FOUND)
+  target_compile_definitions(mesh2sdf PRIVATE HAVE_ASSIMP)
   target_compile_definitions(${PROJECT_NAME} PRIVATE HAVE_ASSIMP)
   target_compile_definitions(QuerySDF PRIVATE HAVE_ASSIMP)
   target_link_libraries(${PROJECT_NAME} assimp)
