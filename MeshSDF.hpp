@@ -59,11 +59,26 @@ class MeshSDF
                 Array3i& closest_tri,
                 int di, int dj, int dk);
 
-    /** Returns the global coordinates of a point in the SDF grid given (i,j,k) grid indices. */
+    /** Returns the global coordinates of a point in the SDF grid given integer (i,j,k) grid indices. */
     Vec3r _gridPointFromIJK(int i, int j, int k) const;
+
+    /** Returns the global coordinates of a point in the SDF grid given decimal (i,j,k) grid indices. */
+    Vec3r _gridPointFromIJK(Real i, Real j, Real k) const;
 
     /** Returns DECIMAL (i,j,k) grid indices given a point in global coordinates. */
     Vec3r _gridIJKFromPoint(const Vec3r& p) const;
+
+    /** Performs trilinear interpolation on the distance grid for a cell with corners (i0,j0,k0) to (i1,j1,k1).
+     * (id,jd,kd) are each in [0,1] and are the interpolation parameter.
+     * Returns the interpolated distance in the middle of the cell.
+     */
+    Real _interpolateDistanceGrid(int i0, int j0, int k0, int i1, int j1, int k1, int id, int jd, int kd) const;
+
+    /** Performs trilinear spherical interpolation on the gradient grid for a cell with corners (i0,j0,k0) to (i1,j1,k1).
+     * (id,jd,kd) are each in [0,1] and are the interpolation parameters.
+     * Reteurns the interpolated gradient in the middle of the cell.
+     */
+    Vec3r _interpolateGradientGrid(int i0, int j0, int k0, int i1, int j1, int k1, int id, int jd, int kd) const;
 
     private:
     static constexpr int FLOAT_PRECISION = 10;  // the number of places after the decimal to use when printing the SDF to file

@@ -43,32 +43,45 @@ Real MeshSDF::evaluate(const Vec3r& p) const
     const int j0 = std::floor(ijk[1]);    const int j1 = j0+1;
     const int k0 = std::floor(ijk[2]);    const int k1 = k0+1;
 
-    if (i0 >= 0 && i0 < _N && j0 >= 0 && j0 < _N && k0 >= 0 && k0 < _N)
+    // the decimal part of the (i,j,k) coordinates - becomes the interpolation parameters
+    const Real id = ijk[0] - i0;
+    const Real jd = ijk[1] - j0;
+    const Real kd = ijk[2] - k0;
+ 
+    // check to make sure we are inside the grid boundaries
+    if (i0 >= 0 && i0 < _N-1 && j0 >= 0 && j0 < _N-1 && k0 >= 0 && k0 < _N-1)
     {
-        // trilinear interpolation
-        const Real id = ijk[0] - i0;
-        const Real jd = ijk[1] - j0;
-        const Real kd = ijk[2] - k0;
-
-        const Real c000 = _distance_grid.at(i0,j0,k0);    const Real c100 = _distance_grid.at(i1,j0,k0);
-        const Real c001 = _distance_grid.at(i0,j0,k1);    const Real c101 = _distance_grid.at(i1,j0,k1);
-        const Real c010 = _distance_grid.at(i0,j1,k0);    const Real c110 = _distance_grid.at(i1,j1,k0);
-        const Real c011 = _distance_grid.at(i0,j1,k1);    const Real c111 = _distance_grid.at(i1,j1,k1);
-        const Real c00 = c000*(1-id) + c100*id;
-        const Real c01 = c001*(1-id) + c101*id;
-        const Real c10 = c010*(1-id) + c110*id;
-        const Real c11 = c011*(1-id) + c111*id;
-        const Real c0 = c00*(1-jd) + c10*jd;
-        const Real c1 = c01*(1-jd) + c11*jd;
-        const Real c = c0*(1-kd) + c1*kd;
-        return c;
+        return _interpolateDistanceGrid(i0, j0, k0, i1, j1, k1, id, jd, kd);
     }
-    
-    // we are outside the bounds of the grid - for now terminate, though maybe in the future handle this case
-    std::cerr << "Outside the bounds of the SDF!" << std::endl;
-    assert(0);
 
+    // we are outside the bounds of the grid - so clamp to the grid border
+    const int clamped_i0 = std::clamp(i0, 0, _N-1);     const int clamped_i1 = std::clamp(i1, 0, _N-1);
+    const int clamped_j0 = std::clamp(j0, 0, _N-1);     const int clamped_j1 = std::clamp(j1, 0, _N-1);
+    const int clamped_k0 = std::clamp(k0, 0, _N-1);     const int clamped_k1 = std::clamp(k1, 0, _N-1);
+
+    std::cout << "i0: " << clamped_i0 << " j0: " << clamped_j0 << " k0: " << clamped_k0 << "\ni1: " << clamped_i1 << " j1: " << clamped_j1 << " k1: " << clamped_k1 << std::endl; 
+
+    // get the distance and gradient from the border point
+    const Real dist_from_border = _interpolateDistanceGrid(clamped_i0, clamped_j0, clamped_k0, clamped_i1, clamped_j1, clamped_k1, id, jd, kd);
+    const Vec3r border_point = _gridPointFromIJK(   (clamped_i0 == i0) ? ijk[0] : (Real)clamped_i0,
+                                                    (clamped_j0 == j0) ? ijk[1] : (Real)clamped_j0,
+                                                    (clamped_k0 == k0) ? ijk[2] : (Real)clamped_k0  );
+
+    // if we don't have the SDF gradient, we can't get the closest point on the mesh
+    // so the best we can do is an estimate ==> (Distance From p to SDF Grid border) + (Distance from SDF Grid border to mesh)
+    if (!_with_gradient)
+    {
+        return dist_from_border + (p - border_point).norm();    // THIS IS NOT EXACT! But without the gradient (I think) this is the best we can do
+    }
+
+    // if we have the gradient, we can be more exact by getting the closest point on the mesh
+    const Vec3r grad_from_border = _interpolateGradientGrid(clamped_i0, clamped_j0, clamped_k0, clamped_i1, clamped_j1, clamped_k1, id, jd, kd);
     
+    // find the closest point on the mesh from the grid border
+    const Vec3r closest_point = border_point - dist_from_border * grad_from_border;
+
+    // now that we have the closest point on the mesh, we can find the distance
+    return (p - closest_point).norm();
 }
 
 Vec3r MeshSDF::gradient(const Vec3r& p) const
@@ -78,22 +91,33 @@ Vec3r MeshSDF::gradient(const Vec3r& p) const
     const int i0 = std::floor(ijk[0]);    const int i1 = i0+1;
     const int j0 = std::floor(ijk[1]);    const int j1 = j0+1;
     const int k0 = std::floor(ijk[2]);    const int k1 = k0+1;
-    if (i0 >= 0 && i0 < _N && j0 >= 0 && j0 < _N && k0 >= 0 && k0 < _N)
-    {
-        const Real id = ijk[0] - i0;
-        const Real jd = ijk[1] - j0;
-        const Real kd = ijk[2] - k0;
 
-        const Vec3r& c000 = _gradient_grid.at(i0,j0,k0);    const Vec3r& c100 = _gradient_grid.at(i1,j0,k0);
-        const Vec3r& c001 = _gradient_grid.at(i0,j0,k1);    const Vec3r& c101 = _gradient_grid.at(i1,j0,k1);
-        const Vec3r& c010 = _gradient_grid.at(i0,j1,k0);    const Vec3r& c110 = _gradient_grid.at(i1,j1,k0);
-        const Vec3r& c011 = _gradient_grid.at(i0,j1,k1);    const Vec3r& c111 = _gradient_grid.at(i1,j1,k1);
-        return vectorTriSlerp(c000, c100, c010, c110, c001, c101, c011, c111, id, jd, kd);
+    // the decimal part of the (i,j,k) coordinates - becomes the interpolation parameters
+    const Real id = ijk[0] - i0;
+    const Real jd = ijk[1] - j0;
+    const Real kd = ijk[2] - k0;
+
+    // check to make sure we are inside the grid boundaries
+    if (i0 >= 0 && i0 < _N-1 && j0 >= 0 && j0 < _N-1 && k0 >= 0 && k0 < _N-1)
+    {
+        return _interpolateGradientGrid(i0, j0, k0, i1, j1, k1, id, jd, kd);
     }
 
-    // we are outside the bounds of the grid - for now terminate, though maybe in the future handle this case
-    std::cerr << "Outside the bounds of the SDF!" << std::endl;
-    assert(0);
+    // we are outside the bounds of the grid - so clamp to the grid border
+    const int clamped_i0 = std::clamp(i0, 0, _N-1);     const int clamped_i1 = std::clamp(i1, 0, _N-1);
+    const int clamped_j0 = std::clamp(j0, 0, _N-1);     const int clamped_j1 = std::clamp(j1, 0, _N-1);
+    const int clamped_k0 = std::clamp(k0, 0, _N-1);     const int clamped_k1 = std::clamp(k1, 0, _N-1);
+
+    // get the distance and gradient from the border point
+    const Real dist_from_border = _interpolateDistanceGrid(clamped_i0, clamped_j0, clamped_k0, clamped_i1, clamped_j1, clamped_k1, id, jd, kd);
+    const Vec3r grad_from_border = _interpolateGradientGrid(clamped_i0, clamped_j0, clamped_k0, clamped_i1, clamped_j1, clamped_k1, id, jd, kd);
+    const Vec3r border_point = _gridPointFromIJK(   (clamped_i0 == i0) ? ijk[0] : (Real)clamped_i0,
+                                                    (clamped_j0 == j0) ? ijk[1] : (Real)clamped_j0,
+                                                    (clamped_k0 == k0) ? ijk[2] : (Real)clamped_k0  );
+    // find the closest point on the mesh from the grid border
+    const Vec3r closest_point = border_point - dist_from_border * grad_from_border;
+
+    return (p - closest_point).normalized();
 }
 
 void MeshSDF::writeToFile(const std::string& filename) const
@@ -478,9 +502,41 @@ Vec3r MeshSDF::_gridPointFromIJK(int i, int j, int k) const
     return Vec3r(i*_cell_size[0]+_bbox_min[0], j*_cell_size[1]+_bbox_min[1], k*_cell_size[2]+_bbox_min[2]);
 }
 
+Vec3r MeshSDF::_gridPointFromIJK(Real i, Real j, Real k) const
+{
+    return Vec3r(i*_cell_size[0]+_bbox_min[0], j*_cell_size[1]+_bbox_min[1], k*_cell_size[2]+_bbox_min[2]);
+}
+
 Vec3r MeshSDF::_gridIJKFromPoint(const Vec3r& p) const
 {
     return (p - _bbox_min).array() / _cell_size.array();
+}
+
+Real MeshSDF::_interpolateDistanceGrid(int i0, int j0, int k0, int i1, int j1, int k1, int id, int jd, int kd) const
+{
+    // trilinear interpolation
+    const Real c000 = _distance_grid.at(i0,j0,k0);    const Real c100 = _distance_grid.at(i1,j0,k0);
+    const Real c001 = _distance_grid.at(i0,j0,k1);    const Real c101 = _distance_grid.at(i1,j0,k1);
+    const Real c010 = _distance_grid.at(i0,j1,k0);    const Real c110 = _distance_grid.at(i1,j1,k0);
+    const Real c011 = _distance_grid.at(i0,j1,k1);    const Real c111 = _distance_grid.at(i1,j1,k1);
+    const Real c00 = c000*(1-id) + c100*id;
+    const Real c01 = c001*(1-id) + c101*id;
+    const Real c10 = c010*(1-id) + c110*id;
+    const Real c11 = c011*(1-id) + c111*id;
+    const Real c0 = c00*(1-jd) + c10*jd;
+    const Real c1 = c01*(1-jd) + c11*jd;
+    const Real c = c0*(1-kd) + c1*kd;
+
+    return c;
+}
+
+Vec3r MeshSDF::_interpolateGradientGrid(int i0, int j0, int k0, int i1, int j1, int k1, int id, int jd, int kd) const
+{
+    const Vec3r& c000 = _gradient_grid.at(i0,j0,k0);    const Vec3r& c100 = _gradient_grid.at(i1,j0,k0);
+    const Vec3r& c001 = _gradient_grid.at(i0,j0,k1);    const Vec3r& c101 = _gradient_grid.at(i1,j0,k1);
+    const Vec3r& c010 = _gradient_grid.at(i0,j1,k0);    const Vec3r& c110 = _gradient_grid.at(i1,j1,k0);
+    const Vec3r& c011 = _gradient_grid.at(i0,j1,k1);    const Vec3r& c111 = _gradient_grid.at(i1,j1,k1);
+    return vectorTriSlerp(c000, c100, c010, c110, c001, c101, c011, c111, id, jd, kd);
 }
 
 } // mesh2sdf
