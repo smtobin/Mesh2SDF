@@ -70,6 +70,13 @@ Vec3r vectorTriSlerp( const Vec3r& v000, const Vec3r& v100,
                                 Real t0, Real t1, Real t2);
 
 
+/** Given a matrix of vertices and a matrix of triangular faces representing a closed triangle mesh,
+ *  finds the center of mass of the mesh.
+ * @param verts - the vertices of the mesh
+ * @param tris - the triangular faces of the mesh
+*/
+Vec3r massCenter(const VertexMat& verts, const TriangleMat& tris);
+
 
 // =========== FILE UTILS ==============
 

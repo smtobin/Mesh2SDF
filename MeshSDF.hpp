@@ -40,6 +40,9 @@ class MeshSDF
     /** Returns the bounding box around the mesh itself. */
     BoundingBox meshBoundingBox() const { return BoundingBox(_mesh_bbox_min, _mesh_bbox_max); }
 
+    /** Returns the mass center for the mesh. */
+    Vec3r meshMassCenter() const { return _mesh_mass_center; }
+
     private:
 
     /** Helper function that loads an SDF from file. Expects a .sdf file that was produced by this class. */
@@ -97,6 +100,8 @@ class MeshSDF
 
     Vec3r _mesh_bbox_min;   // bounding box minimum for the mesh itself - this will likely be larger than the grid bbox min due to padding cells
     Vec3r _mesh_bbox_max;   // bounding box maximum for the mesh itself - this will likely be smaller than the grid bbox max due to padding cells
+
+    Vec3r _mesh_mass_center; // the center of mass for the mesh
 
     bool _with_gradient; // whether or not the gradient of the SDF was computed and stored along with the distance
 

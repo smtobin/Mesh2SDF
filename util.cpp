@@ -209,6 +209,41 @@ Vec3r vectorTriSlerp( const Vec3r& v000, const Vec3r& v100,
                         t2  );
 }
 
+Vec3r massCenter(const VertexMat& verts, const TriangleMat& tris)
+{
+    Real total_volume = 0;
+    Vec3r center_of_mass(0,0,0);
+    for (const auto& f : tris.colwise())
+    {
+        // each triangle in the mesh + origin forms a tetrahedron
+        // v0=origin, v1=f[0], v2=f[1], v3=f[2]
+        const Vec3r v0(0,0,0);
+        const Vec3r v1 = verts.col(f[0]);
+        const Vec3r v2 = verts.col(f[1]);
+        const Vec3r v3 = verts.col(f[2]);
+
+        // tet basis matrix
+        Eigen::Matrix<Real, 3, 3> A;
+        A.col(0) = (v1 - v0);
+        A.col(1) = (v2 - v0);
+        A.col(2) = (v3 - v0);
+
+        // find signed volume of tet
+        const Real volume = A.determinant() / 6.0;
+
+        // calculate the center of mass of this tetrahedron - just average of 4 vertices
+        const Vec3r tet_cm = 0.25*(v0 + v1 + v2 + v3);
+        // update overall center of mass using a weighted average
+        if (total_volume + volume > 0)
+            center_of_mass = (center_of_mass*total_volume + tet_cm*volume) / (total_volume + volume);
+
+        // update overall volume
+        total_volume += volume;
+    }
+
+    return center_of_mass;
+}
+
 
 std::string formatFloat(Real value, int precision)
 {

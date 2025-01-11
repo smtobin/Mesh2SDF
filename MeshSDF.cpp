@@ -135,7 +135,7 @@ void MeshSDF::writeToFile(const std::string& filename) const
     ss << formatFloat(_grid_bbox_max[0],FLOAT_PRECISION) << " " << formatFloat(_grid_bbox_max[1],FLOAT_PRECISION) << " " << formatFloat(_grid_bbox_max[2],FLOAT_PRECISION) << "\n";
     ss << formatFloat(_mesh_bbox_min[0],FLOAT_PRECISION) << " " << formatFloat(_mesh_bbox_min[1],FLOAT_PRECISION) << " " << formatFloat(_mesh_bbox_min[2],FLOAT_PRECISION) << "\n";  
     ss << formatFloat(_mesh_bbox_max[0],FLOAT_PRECISION) << " " << formatFloat(_mesh_bbox_max[1],FLOAT_PRECISION) << " " << formatFloat(_mesh_bbox_max[2],FLOAT_PRECISION) << "\n"; 
-
+    ss << formatFloat(_mesh_mass_center[0],FLOAT_PRECISION) << " " << formatFloat(_mesh_mass_center[1],FLOAT_PRECISION) << " " << formatFloat(_mesh_mass_center[2],FLOAT_PRECISION) << "\n";
 
     // print distances
     for (int i = 0; i < _N; i++)    for (int j = 0; j < _N; j++)    for (int k = 0; k < _N; k++)
@@ -208,6 +208,9 @@ void MeshSDF::_loadSDFFromFile(const std::string& filename)
     parseVector3f(_mesh_bbox_min, data, REAL_CHAR_WIDTH);   // read minimum mesh bounding box point
     while (*data++ != '\n' && cntr++ < sb.st_size);     // move to next line
     parseVector3f(_mesh_bbox_max, data, REAL_CHAR_WIDTH);   // read maximum mesh bounding box point
+    while (*data++ != '\n' && cntr++ < sb.st_size);     // move to next line
+
+    parseVector3f(_mesh_mass_center, data, REAL_CHAR_WIDTH);   // read mesh mass center
     while (*data++ != '\n' && cntr++ < sb.st_size);     // move to next line
 
     // read distances and gradients (when applicable)
@@ -298,6 +301,8 @@ void MeshSDF::_makeSDF(const VertexMat& verts, const TriangleMat& tris, int padd
     // store the mesh bounding box limits
     _mesh_bbox_min = vertex_mins;
     _mesh_bbox_max = vertex_maxs;
+
+    _mesh_mass_center = massCenter(verts, tris);
 
     // initialize distances with really large value
     _distance_grid.assign(std::numeric_limits<Real>::max());
