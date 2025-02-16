@@ -43,6 +43,10 @@ class MeshSDF
     /** Returns the mass center for the mesh. */
     Vec3r meshMassCenter() const { return _mesh_mass_center; }
 
+    const Array3<Real>& distanceGrid() const { return _distance_grid; }
+
+    const Array3<Vec3r>& gradientGrid() const { assert(_with_gradient); return _gradient_grid; }
+
     private:
 
     /** Helper function that loads an SDF from file. Expects a .sdf file that was produced by this class. */
