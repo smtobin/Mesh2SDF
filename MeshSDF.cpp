@@ -53,7 +53,7 @@ Real MeshSDF::evaluate(const Vec3r& p) const
     const Real id = ijk[0] - i0;
     const Real jd = ijk[1] - j0;
     const Real kd = ijk[2] - k0;
- 
+
     // check to make sure we are inside the grid boundaries
     if (i0 >= 0 && i0 < _N-1 && j0 >= 0 && j0 < _N-1 && k0 >= 0 && k0 < _N-1)
     {
@@ -534,7 +534,7 @@ Vec3r MeshSDF::_gridIJKFromPoint(const Vec3r& p) const
     return (p - _grid_bbox_min).array() / _cell_size.array();
 }
 
-Real MeshSDF::_interpolateDistanceGrid(int i0, int j0, int k0, int i1, int j1, int k1, int id, int jd, int kd) const
+Real MeshSDF::_interpolateDistanceGrid(int i0, int j0, int k0, int i1, int j1, int k1, Real id, Real jd, Real kd) const
 {
     // trilinear interpolation
     const Real c000 = _distance_grid.at(i0,j0,k0);    const Real c100 = _distance_grid.at(i1,j0,k0);
@@ -552,7 +552,7 @@ Real MeshSDF::_interpolateDistanceGrid(int i0, int j0, int k0, int i1, int j1, i
     return c;
 }
 
-Vec3r MeshSDF::_interpolateGradientGrid(int i0, int j0, int k0, int i1, int j1, int k1, int id, int jd, int kd) const
+Vec3r MeshSDF::_interpolateGradientGrid(int i0, int j0, int k0, int i1, int j1, int k1, Real id, Real jd, Real kd) const
 {
     const Vec3r& c000 = _gradient_grid.at(i0,j0,k0);    const Vec3r& c100 = _gradient_grid.at(i1,j0,k0);
     const Vec3r& c001 = _gradient_grid.at(i0,j0,k1);    const Vec3r& c101 = _gradient_grid.at(i1,j0,k1);

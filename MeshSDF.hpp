@@ -89,13 +89,13 @@ class MeshSDF
      * (id,jd,kd) are each in [0,1] and are the interpolation parameter.
      * Returns the interpolated distance in the middle of the cell.
      */
-    Real _interpolateDistanceGrid(int i0, int j0, int k0, int i1, int j1, int k1, int id, int jd, int kd) const;
+    Real _interpolateDistanceGrid(int i0, int j0, int k0, int i1, int j1, int k1, Real id, Real jd, Real kd) const;
 
     /** Performs trilinear spherical interpolation on the gradient grid for a cell with corners (i0,j0,k0) to (i1,j1,k1).
      * (id,jd,kd) are each in [0,1] and are the interpolation parameters.
      * Reteurns the interpolated gradient in the middle of the cell.
      */
-    Vec3r _interpolateGradientGrid(int i0, int j0, int k0, int i1, int j1, int k1, int id, int jd, int kd) const;
+    Vec3r _interpolateGradientGrid(int i0, int j0, int k0, int i1, int j1, int k1, Real id, Real jd, Real kd) const;
 
     private:
     static constexpr int FLOAT_PRECISION = 10;  // the number of places after the decimal to use when printing the SDF to file
