@@ -41,10 +41,14 @@ class MeshSDF
     BoundingBox meshBoundingBox() const { return BoundingBox(_mesh_bbox_min, _mesh_bbox_max); }
 
     /** Returns the mass center for the mesh. */
-    Vec3r meshMassCenter() const { return _mesh_mass_center; }
+    const Vec3r& meshMassCenter() const { return _mesh_mass_center; }
 
+    const Vec3r& gridCellSize() const { return _cell_size; }
+
+    /** Returns a reference to the distance grid Array3 object for direct querying. */
     const Array3<Real>& distanceGrid() const { return _distance_grid; }
 
+    /** Returns a reference to the gradient grid Array3 object for direct querying. */
     const Array3<Vec3r>& gradientGrid() const { assert(_with_gradient); return _gradient_grid; }
 
     private:
