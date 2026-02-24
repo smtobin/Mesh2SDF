@@ -1,5 +1,6 @@
 #include "MeshSDF.hpp"
 #include "util.hpp"
+#include "serialize.hpp"
 
 #include <map>
 #include <iostream>
@@ -559,6 +560,34 @@ Vec3r MeshSDF::_interpolateGradientGrid(int i0, int j0, int k0, int i1, int j1, 
     const Vec3r& c010 = _gradient_grid.at(i0,j1,k0);    const Vec3r& c110 = _gradient_grid.at(i1,j1,k0);
     const Vec3r& c011 = _gradient_grid.at(i0,j1,k1);    const Vec3r& c111 = _gradient_grid.at(i1,j1,k1);
     return vectorTriSlerp(c000, c100, c010, c110, c001, c101, c011, c111, id, jd, kd);
+}
+
+void MeshSDF::serialize(std::vector<std::byte>& buf) const
+{
+    pack(buf, _N);
+    pack(buf, _cell_size);
+    pack(buf, _grid_bbox_min);
+    pack(buf, _grid_bbox_max);
+    pack(buf, _mesh_bbox_min);
+    pack(buf, _mesh_bbox_max);
+    pack(buf, _mesh_mass_center);
+    pack(buf, _with_gradient);
+    pack(buf, _distance_grid);
+    pack(buf, _gradient_grid);
+}
+
+void MeshSDF::deserialize(const std::byte*& buf)
+{
+    unpack(buf, _N);
+    unpack(buf, _cell_size);
+    unpack(buf, _grid_bbox_min);
+    unpack(buf, _grid_bbox_max);
+    unpack(buf, _mesh_bbox_min);
+    unpack(buf, _mesh_bbox_max);
+    unpack(buf, _mesh_mass_center);
+    unpack(buf, _with_gradient);
+    unpack(buf, _distance_grid);
+    unpack(buf, _gradient_grid);
 }
 
 } // mesh2sdf

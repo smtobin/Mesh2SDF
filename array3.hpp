@@ -7,6 +7,8 @@
 #include <cassert>
 #include <vector>
 
+#include "serialize.hpp"
+
 namespace mesh2sdf
 {
 
@@ -117,6 +119,22 @@ struct Array3
       if(nj>x.nj) return true; else if(nj<x.nj) return false;
       if(nk>x.nk) return true; else if(nk<x.nk) return false;
       return a>=x.a;
+   }
+
+   void serialize(std::vector<std::byte>& buf) const
+   {
+      pack(buf, ni);
+      pack(buf, nj);
+      pack(buf, nk);
+      pack(buf, a);
+   }
+
+   void deserialize(const std::byte*& buf)
+   {
+      unpack(buf, ni);
+      unpack(buf, nj);
+      unpack(buf, nk);
+      unpack(buf, a);
    }
 
    void assign(const T& value)

@@ -41,6 +41,9 @@ target_link_libraries(${PROJECT_NAME} mesh2sdf)
 add_executable(QuerySDF mainQuery.cpp)
 target_link_libraries(QuerySDF mesh2sdf)
 
+add_executable(TestSerialize mainSerialize.cpp)
+target_link_libraries(TestSerialize mesh2sdf)
+
 install(TARGETS mesh2sdf EXPORT mesh2sdf-targets
   RUNTIME DESTINATION bin/${PROJECT_NAME}
   LIBRARY DESTINATION lib/${PROJECT_NAME}
@@ -50,8 +53,10 @@ if (assimp_FOUND)
   target_compile_definitions(mesh2sdf PRIVATE HAVE_ASSIMP)
   target_compile_definitions(${PROJECT_NAME} PRIVATE HAVE_ASSIMP)
   target_compile_definitions(QuerySDF PRIVATE HAVE_ASSIMP)
+  target_compile_definitions(TestSerialize PRIVATE HAVE_ASSIMP)
   target_link_libraries(${PROJECT_NAME} assimp)
   target_link_libraries(QuerySDF assimp)
+  target_link_libraries(TestSerialize assimp)
 endif()
 
 if (USE_DOUBLE_PRECISION)
@@ -59,4 +64,5 @@ message("\n-- Compiling with double precision...")
   target_compile_definitions(mesh2sdf PRIVATE MESH2SDF_DOUBLE_PRECISION)
   target_compile_definitions(${PROJECT_NAME} PRIVATE MESH2SDF_DOUBLE_PRECISION)
   target_compile_definitions(QuerySDF PRIVATE MESH2SDF_DOUBLE_PRECISION)
+  target_compile_definitions(TestSerialize PRIVATE MESH2SDF_DOUBLE_PRECISION)
 endif()

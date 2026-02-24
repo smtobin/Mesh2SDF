@@ -25,6 +25,12 @@ class MeshSDF
     /** Loads a SDF that was written to file by this class. Expects a .sdf extension. */
     MeshSDF(const std::string& filename);
 
+    /** Serialization to byte buffer */
+    void serialize(std::vector<std::byte>& buf) const;
+
+    /** Deserialization from byte buffer */
+    void deserialize(const std::byte*& buf);
+
     /** Evaluates the SDF at the given point. */
     Real evaluate(const Vec3r& p) const;
     
