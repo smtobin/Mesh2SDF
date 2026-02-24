@@ -14,6 +14,9 @@
 
 #include <Eigen/Dense>
 
+namespace mesh2sdf
+{
+
 // detection helper
 template<typename T, typename = void>
 struct has_serialize : std::false_type {};
@@ -184,5 +187,7 @@ unpack(const std::byte*& cursor, Derived& mat)
     std::memcpy(mat.derived().data(), cursor, mat.size() * sizeof(typename Derived::Scalar));
     cursor += mat.size() * sizeof(typename Derived::Scalar);
 }
+
+} // namespace mesh2sdf
 
 #endif // __MESH2SDF_SERIALIZE_HPP
