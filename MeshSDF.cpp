@@ -129,39 +129,17 @@ void MeshSDF::writeToFile(const std::string& filename) const
 {
     std::cout << "Writing SDF to " << filename << "..." << std::endl;
 
-    std::stringstream ss;
-    ss << _N << " " << _N << " " << _N << "\n"; // print grid size
-    ss << formatFloat(_cell_size[0],FLOAT_PRECISION) << " " << formatFloat(_cell_size[1],FLOAT_PRECISION) << " " << formatFloat(_cell_size[2],FLOAT_PRECISION) << "\n";    // print cell size
-    ss << formatFloat(_grid_bbox_min[0],FLOAT_PRECISION) << " " << formatFloat(_grid_bbox_min[1],FLOAT_PRECISION) << " " << formatFloat(_grid_bbox_min[2],FLOAT_PRECISION) << "\n";
-    ss << formatFloat(_grid_bbox_max[0],FLOAT_PRECISION) << " " << formatFloat(_grid_bbox_max[1],FLOAT_PRECISION) << " " << formatFloat(_grid_bbox_max[2],FLOAT_PRECISION) << "\n";
-    ss << formatFloat(_mesh_bbox_min[0],FLOAT_PRECISION) << " " << formatFloat(_mesh_bbox_min[1],FLOAT_PRECISION) << " " << formatFloat(_mesh_bbox_min[2],FLOAT_PRECISION) << "\n";  
-    ss << formatFloat(_mesh_bbox_max[0],FLOAT_PRECISION) << " " << formatFloat(_mesh_bbox_max[1],FLOAT_PRECISION) << " " << formatFloat(_mesh_bbox_max[2],FLOAT_PRECISION) << "\n"; 
-    ss << formatFloat(_mesh_mass_center[0],FLOAT_PRECISION) << " " << formatFloat(_mesh_mass_center[1],FLOAT_PRECISION) << " " << formatFloat(_mesh_mass_center[2],FLOAT_PRECISION) << "\n";
+    std::vector<std::byte> buf;
+    serialize(buf);
 
-    // print distances
-    for (int i = 0; i < _N; i++)    for (int j = 0; j < _N; j++)    for (int k = 0; k < _N; k++)
-    {
-        ss << formatFloat(_distance_grid.at(i,j,k),FLOAT_PRECISION) << "\n";
-    }
-
-    // print gradients (if applicable)
-    if (_with_gradient)
-    {
-        for (int i = 0; i < _N; i++)    for (int j = 0; j < _N; j++)    for (int k = 0; k < _N; k++)
-        {
-            Vec3r grad = _gradient_grid.at(i,j,k);
-            ss << formatFloat(grad[0],FLOAT_PRECISION) << " " << formatFloat(grad[1],FLOAT_PRECISION) << " " << formatFloat(grad[2],FLOAT_PRECISION) << "\n";
-        }
-    }
-
-    std::ofstream outfile(filename);
+    std::ofstream outfile(filename, std::ios::binary);
     if (!outfile.is_open())
     {
         std::cerr << "Error opening file " << filename << "!" << std::endl;
         assert(0);
     }
 
-    outfile << ss.str();
+    outfile.write(reinterpret_cast<const char*>(buf.data()), buf.size());
     outfile.close();
 
     std::cout << "Done!" << std::endl;
@@ -170,110 +148,23 @@ void MeshSDF::writeToFile(const std::string& filename) const
 
 void MeshSDF::_loadSDFFromFile(const std::string& filename)
 {
-    const int REAL_CHAR_WIDTH = FLOAT_PRECISION + 6;   // the number of characters a Real takes up in the file
-
-    // fast read from file using mmap - https://stackoverflow.com/a/17925197
-    struct stat sb;
-    long cntr = 0;
-    int fd, line_length;
-    int line_num = 0;
-    char* data;
-    char* line;
-
-    int grid_index_1D = 0;
-    Real f;
-    bool reading_distances = true;
-    bool reading_gradients = false;
-    // map the file
-    fd = open(filename.c_str(), O_RDONLY);
-    fstat(fd, &sb);
-
-    data = (char*)mmap((caddr_t)0, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-    line = data;
-
-    // read the first few lines
-
-    _N = atoi(line);    // read the number of grid cells (grid has the same number of cells in each direction)
-    _distance_grid.resize(_N, _N, _N);  // resize the distance grid accordingly
-    while (*data++ != '\n' && cntr++ < sb.st_size);     // move to next line
-    
-    parseVector3f(_cell_size, data, REAL_CHAR_WIDTH);  // read cell size
-    while (*data++ != '\n' && cntr++ < sb.st_size);     // move to next line
-
-    
-    parseVector3f(_grid_bbox_min, data, REAL_CHAR_WIDTH);   // read minimum grid bounding box point
-    while (*data++ != '\n' && cntr++ < sb.st_size);     // move to next line
-    parseVector3f(_grid_bbox_max, data, REAL_CHAR_WIDTH);   // read maximum grid bounding box point
-    while (*data++ != '\n' && cntr++ < sb.st_size);     // move to next line
-
-    parseVector3f(_mesh_bbox_min, data, REAL_CHAR_WIDTH);   // read minimum mesh bounding box point
-    while (*data++ != '\n' && cntr++ < sb.st_size);     // move to next line
-    parseVector3f(_mesh_bbox_max, data, REAL_CHAR_WIDTH);   // read maximum mesh bounding box point
-    while (*data++ != '\n' && cntr++ < sb.st_size);     // move to next line
-
-    parseVector3f(_mesh_mass_center, data, REAL_CHAR_WIDTH);   // read mesh mass center
-    while (*data++ != '\n' && cntr++ < sb.st_size);     // move to next line
-
-    // read distances and gradients (when applicable)
-    while (cntr < sb.st_size)
+    std::ifstream file(filename, std::ios::binary);
+    if (!file)
     {
-        line = data;
-
-        // move to the next line
-        while (cntr++ < sb.st_size && *data++ != '\n');
-        
-
-        /** Process the line */
-
-        // find 3D grid index (i.e. i,j,k)
-        const int i = grid_index_1D / (_N*_N);
-        const int j = (grid_index_1D / _N) % _N;
-        const int k = grid_index_1D % _N;
-
-        // if we are reading distances, we only expect a single Real per line
-        if (reading_distances)
-        {
-            // read Real from buffer    
-            _distance_grid(i,j,k) = atof(line);
-        }
-
-        // if we are reading gradients, we expect 3 Reals per line separated by spaces
-        if (reading_gradients)
-        {
-            // read Real 3-vector from char buffer
-            parseVector3f(_gradient_grid(i,j,k), line, REAL_CHAR_WIDTH);
-        }
-
-        grid_index_1D++;
-
-        // when we reach the end of distances, switch over to reading gradients
-        if (grid_index_1D >= _N*_N*_N)
-        {
-            if (reading_distances)
-            {
-                reading_distances = false;
-
-                // check if there are gradients after the distances
-                if (sb.st_size - cntr > _N*_N*_N*(REAL_CHAR_WIDTH + 3))
-                {
-                    // if so, resize the gradient grid appropriately
-                    _gradient_grid.resize(_N, _N, _N);
-                    _with_gradient = true;
-
-                    // and indicate that we are expecting to read gradients now
-                    reading_gradients = true;
-                }
-                
-            }
-            else if (reading_gradients)
-            {
-                reading_gradients = false;
-            }
-
-            grid_index_1D = 0;
-            continue;
-        }
+        std::cerr << "Error opening file " << filename << "!" << std::endl;
+        assert(0);
     }
+    
+    // get file size
+    file.seekg(0, std::ios::end);
+    size_t size = file.tellg();
+    file.seekg(0, std::ios::beg);
+    
+    // read into buffer
+    std::vector<std::byte> buf(size);
+    file.read(reinterpret_cast<char*>(buf.data()), size);
+    const std::byte* cursor = buf.data();
+    deserialize(cursor);
     
     std::cout << "Finished reading SDF from file..." << std::endl;
     std::cout << "\tGrid size: " << _N << " x " << _N << " x " << _N << std::endl;
